@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from collections import Counter
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 
 @dataclass(frozen=True, slots=True)
@@ -31,7 +31,7 @@ class AuditRecord:
     @classmethod
     def from_spans(cls, spans: list[Span], policy_hash: str) -> AuditRecord:
         counts = dict(Counter(s.type for s in spans))
-        ts = datetime.now(timezone.utc).isoformat()
+        ts = datetime.now(UTC).isoformat()
         return cls(counts=counts, policy_hash=policy_hash, ts=ts)
 
 
