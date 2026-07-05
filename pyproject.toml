@@ -1,0 +1,57 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "spanguard"
+version = "0.1.0"
+description = "Detect and redact PII/PHI in text and streaming transcripts, with leak-free audit records."
+readme = "README.md"
+requires-python = ">=3.12"
+license = "MIT"
+authors = [{ name = "spanguard authors" }]
+keywords = ["pii", "phi", "redaction", "compliance", "privacy"]
+classifiers = [
+  "Development Status :: 3 - Alpha",
+  "Programming Language :: Python :: 3.12",
+  "License :: OSI Approved :: MIT License",
+  "Typing :: Typed",
+]
+dependencies = ["pydantic>=2.6,<3"]
+
+[project.optional-dependencies]
+ner = ["spacy>=3.7,<4"]
+
+[project.scripts]
+spanguard = "spanguard.cli:main"
+
+[project.urls]
+Homepage = "https://github.com/spanguard/spanguard"
+Documentation = "https://spanguard.github.io/spanguard"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/spanguard"]
+
+[tool.pytest.ini_options]
+addopts = "-q"
+testpaths = ["tests"]
+
+[tool.coverage.run]
+source = ["spanguard"]
+branch = true
+
+[tool.coverage.report]
+show_missing = true
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM", "RUF"]
+
+[tool.mypy]
+python_version = "3.12"
+strict = true
+files = ["src", "tests"]
