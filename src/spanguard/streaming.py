@@ -5,6 +5,7 @@ from __future__ import annotations
 from spanguard.redactor import Redactor
 
 _DEFAULT_TAIL = 128
+_MIN_TAIL = 64
 
 
 class StreamRedactor:
@@ -14,11 +15,23 @@ class StreamRedactor:
     Guarantee: for any chunking, the concatenation of all ``feed()`` outputs
     plus ``flush()`` equals ``redactor.redact(full_text).text`` -- for every
     mode (mask, placeholder, hash, tokenize) with the same keys. Memory is
-    bounded by ``tail`` plus one chunk. An entity longer than ``tail`` is the
-    documented ceiling and may be split.
+    bounded by ``tail`` plus one chunk. ``tail`` must be >= ``_MIN_TAIL`` (64),
+    which is enforced. An entity longer than ``tail`` with no internal
+    separators (e.g. an email or an API key) degrades gracefully to a
+    word-boundary split. The floor exists specifically to prevent a
+    sub-threshold leak of entities that DO contain internal separators (e.g.
+    a spaced credit card number): below the floor, the buffer never holds
+    enough of the entity for detection to fire, so every whitespace cut looks
+    safe and the raw value streams out unmasked in pieces.
     """
 
     def __init__(self, redactor: Redactor, tail: int = _DEFAULT_TAIL) -> None:
+        if tail < _MIN_TAIL:
+            raise ValueError(
+                f"tail must be >= {_MIN_TAIL} to guarantee no raw value leaks; "
+                f"a smaller tail can let a multi-token entity (e.g. a credit card) "
+                f"stream out in sub-threshold pieces that never match. Got tail={tail}."
+            )
         self._redactor = redactor
         self._tail = tail
         self._buffer = ""

@@ -110,6 +110,29 @@ def test_stream_mrn_left_context_preserved() -> None:
     assert "1234567" not in streamed
 
 
+def test_small_tail_is_rejected() -> None:
+    # A tail below the floor must raise, not silently leak.
+    import pytest
+
+    r = Redactor(Policy(mode="mask", entities=["CREDIT_CARD"]))
+    with pytest.raises(ValueError, match="tail must be >= 64"):
+        StreamRedactor(r, tail=8)
+
+
+def test_min_tail_boundary_accepted_and_safe() -> None:
+    # tail == 64 is the floor: accepted, and must not leak a spaced credit card
+    # fed one character at a time.
+    text = "card 4111 1111 1111 1111 end"
+    policy = Policy(mode="mask", entities=["CREDIT_CARD"])
+    r = Redactor(policy)
+    sr = StreamRedactor(r, tail=64)
+    out = [sr.feed(ch) for ch in text]
+    out.append(sr.flush())
+    streamed = "".join(out)
+    assert streamed == r.redact(text).text
+    assert "4111 1111 1111 1111" not in streamed
+
+
 def test_stream_property_all_modes_internal_separators() -> None:
     import random
 
