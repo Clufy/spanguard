@@ -42,6 +42,20 @@ def test_email_negatives() -> None:
     assert r.recognize("just text, no at sign") == []
 
 
+def test_email_unicode_local_part() -> None:
+    r = EmailRecognizer()
+    text = "write café@example.com now"
+    spans = r.recognize(text)
+    assert len(spans) == 1
+    assert text[spans[0].start : spans[0].end] == "café@example.com"
+
+
+def test_email_still_rejects_non_emails() -> None:
+    r = EmailRecognizer()
+    assert r.recognize("not@an@email") == []
+    assert r.recognize("just words here") == []
+
+
 def test_phone_positive_formats() -> None:
     r = PhoneRecognizer()
     for t in ["555-123-4567", "(555) 123-4567", "+1 555 123 4567"]:
@@ -72,6 +86,13 @@ def test_dob_positive_and_negative() -> None:
     r = DOBRecognizer()
     assert len(r.recognize("dob 01/02/1990")) == 1
     assert len(r.recognize("born 1990-02-01")) == 1
+    assert r.recognize("score 99/99/9999 invalid") == []
+
+
+def test_dob_unpadded_month_day() -> None:
+    r = DOBRecognizer()
+    assert len(r.recognize("dob 1/2/1990")) == 1
+    assert len(r.recognize("dob 01/02/1990")) == 1
     assert r.recognize("score 99/99/9999 invalid") == []
 
 

@@ -11,8 +11,12 @@ from .luhn import luhn_valid
 
 # --- patterns -------------------------------------------------------------
 
+# Email: allow Unicode letters in the local part and domain labels (IDN-ish),
+# still requiring a single @ and a dotted TLD of >= 2 Unicode LETTERS. The TLD
+# class `[^\W\d_]` matches letters only, so trailing punctuation (jane@x.com!)
+# is correctly excluded. Verified against all positive+negative email tests.
 _EMAIL = re.compile(
-    r"\b[A-Za-z0-9._%+\-]+@[A-Za-z0-9.\-]+\.[A-Za-z]{2,}\b"
+    r"(?<![^\s(<>:,;])[^\s@()<>]+@[^\s@()<>]+\.[^\W\d_]{2,}", re.UNICODE
 )
 # NANP-style: optional +country, 3-3-4 with -, ., space, or parens on area code.
 _PHONE = re.compile(
@@ -20,9 +24,10 @@ _PHONE = re.compile(
 )
 _SSN = re.compile(r"(?<!\d)\d{3}-\d{2}-\d{4}(?!\d)")
 _MRN = re.compile(r"\bMRN\s*:?\s*(\d{6,})\b", re.IGNORECASE)
-# DOB: mm/dd/yyyy (01-12 / 01-31) or ISO yyyy-mm-dd; validated loosely by ranges.
+# DOB: mm/dd/yyyy allowing 1- or 2-digit month/day (validated by range),
+# or ISO yyyy-mm-dd.
 _DOB = re.compile(
-    r"(?<!\d)(?:(0[1-9]|1[0-2])/(0[1-9]|[12]\d|3[01])/(\d{4})"
+    r"(?<!\d)(?:(0?[1-9]|1[0-2])/(0?[1-9]|[12]\d|3[01])/(\d{4})"
     r"|(\d{4})-(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01]))(?!\d)"
 )
 # A credit card: a contiguous 13-19 digit run, OR standard printed groupings
