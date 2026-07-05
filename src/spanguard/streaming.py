@@ -58,9 +58,10 @@ class StreamRedactor:
         if limit <= 0:
             return 0
         full = self._redactor._detect(buffer)
-        # ponytail: O(tail * spans) re-detection per feed; the buffer is
-        # tail-bounded (~128 chars) so this is small-constant work. If
-        # throughput ever matters, index separators / cache detection.
+        # ponytail: ~O(tail^2 * recognizers) — re-detects prefix and suffix per
+        # candidate separator; the buffer is tail-bounded (~128 chars) so this
+        # is small-constant work. If throughput matters, index separators /
+        # cache detection.
         for c in range(limit, 0, -1):
             if not buffer[c - 1].isspace():
                 continue
