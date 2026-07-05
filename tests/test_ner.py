@@ -64,7 +64,7 @@ def test_missing_spacy_raises_clear_import_error(monkeypatch) -> None:  # type: 
 
     def fake_import(name: str, *args: object, **kwargs: object) -> object:
         if name == "spacy":
-            raise ModuleNotFoundError("No module named 'spacy'")
+            raise ModuleNotFoundError("No module named 'spacy'", name="spacy")
         return real_import(name, *args, **kwargs)  # type: ignore[arg-type]
 
     monkeypatch.setattr(builtins, "__import__", fake_import)
@@ -76,3 +76,26 @@ def test_missing_spacy_raises_clear_import_error(monkeypatch) -> None:  # type: 
         assert "Jane" not in str(e)             # no input text leaked
         return
     raise AssertionError("expected ImportError when spaCy is missing")
+
+
+def test_load_propagates_non_spacy_import_error(monkeypatch) -> None:  # type: ignore[no-untyped-def]
+    # A broken spaCy install (a *different* module missing, e.g. 'click')
+    # must NOT be misreported as 'install the [ner] extra' — it should
+    # propagate so the real fault is visible.
+    import builtins
+
+    real_import = builtins.__import__
+
+    def fake_import(name: str, *args: object, **kwargs: object) -> object:
+        if name == "spacy":
+            raise ModuleNotFoundError("No module named 'click'", name="click")
+        return real_import(name, *args, **kwargs)  # type: ignore[arg-type]
+
+    monkeypatch.setattr(builtins, "__import__", fake_import)
+    rec = SpacyRecognizer()
+    import pytest
+    with pytest.raises(ModuleNotFoundError) as ei:
+        rec.recognize("Jane in Paris")
+    assert ei.value.name == "click"        # the real fault propagates
+    # and it was NOT rewrapped into the [ner]-extra ImportError:
+    assert "spanguard[ner]" not in str(ei.value)

@@ -17,6 +17,10 @@ class SpacyRecognizer:
     pipeline (used by tests) and skip the model load entirely.
     """
 
+    # This recognizer emits multiple mapped types (PERSON/LOCATION); entity_type
+    # is a generic label satisfying the Recognizer protocol, not a per-span type.
+    entity_type = "NER"
+
     def __init__(
         self,
         model: str = "en_core_web_sm",
@@ -31,13 +35,15 @@ class SpacyRecognizer:
         if self._nlp is None:
             try:
                 import spacy
-            except ModuleNotFoundError as exc:  # pragma: no cover - env-dependent
+            except ModuleNotFoundError as exc:
+                if exc.name != "spacy":
+                    raise
                 raise ImportError(
                     "SpacyRecognizer requires the optional 'ner' extra: "
                     "pip install spanguard[ner], then download a model "
                     "(python -m spacy download en_core_web_sm)."
                 ) from exc
-            self._nlp = spacy.load(self.model)
+            self._nlp = spacy.load(self.model)  # pragma: no cover - env-dependent
         return self._nlp
 
     def recognize(self, text: str) -> list[Span]:

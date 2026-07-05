@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import os
 import secrets
+import warnings
 
 
 def resolve_key(explicit: bytes | None, env_var: str) -> bytes:
@@ -18,4 +19,11 @@ def resolve_key(explicit: bytes | None, env_var: str) -> bytes:
     env = os.environ.get(env_var)
     if env:
         return env.encode()
+    warnings.warn(
+        f"No key provided and {env_var} is unset; using an ephemeral random key. "
+        "Hashes/tokens will not be reproducible across processes and reveal() will "
+        "only work within this process. Set the key explicitly or via the env var "
+        "for stable output.",
+        stacklevel=2,
+    )
     return secrets.token_bytes(32)
