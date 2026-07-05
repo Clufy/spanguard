@@ -9,7 +9,12 @@ from datetime import UTC, datetime
 
 @dataclass(frozen=True, slots=True)
 class Span:
-    """A detected sensitive region: entity `type` over half-open [start, end)."""
+    """A detected sensitive region: entity `type` over half-open [start, end).
+
+    `type` is a fixed entity label (e.g. ``"EMAIL"``), never the matched
+    value — it appears verbatim in the audit record's ``counts`` and in
+    placeholder output.
+    """
 
     type: str
     start: int

@@ -26,3 +26,30 @@ def test_redacted_text_contains_no_raw_values() -> None:
     res = Redactor(Policy(mode="mask")).redact(SAMPLE)
     for raw in RAW_VALUES:
         assert raw not in res.text
+
+
+def test_entity_type_label_is_what_appears_in_output_and_audit() -> None:
+    # Contract: a recognizer's entity_type is a LABEL and appears verbatim
+    # in placeholder output and audit counts. This test documents that the
+    # label — not the matched raw text — is what surfaces, so recognizer
+    # authors must never place sensitive matched content in entity_type.
+    from spanguard.result import Span
+
+    class LabeledRecognizer:
+        entity_type = "CUSTOM_TOKEN"
+
+        def recognize(self, text: str) -> list[Span]:
+            import re
+            return [Span("CUSTOM_TOKEN", m.start(), m.end())
+                    for m in re.finditer(r"SECRET-\d+", text)]
+
+    r = Redactor(Policy(mode="placeholder", entities=["CUSTOM_TOKEN"]),
+                 recognizers=[LabeledRecognizer()])
+    res = r.redact("value SECRET-42 here")
+    # the raw matched text is gone; only the label surfaces
+    assert "SECRET-42" not in res.text
+    assert res.text == "value [CUSTOM_TOKEN] here"
+    # audit counts are keyed by the label, and contain no raw value
+    assert res.audit is not None
+    assert res.audit.counts == {"CUSTOM_TOKEN": 1}
+    assert "SECRET-42" not in str(res.audit.counts)

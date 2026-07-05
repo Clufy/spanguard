@@ -9,7 +9,6 @@ from spanguard.recognizers.regex_recognizers import (
     PhoneRecognizer,
     SSNRecognizer,
 )
-from spanguard.result import Span
 
 
 def test_luhn_valid_known_good() -> None:
@@ -24,10 +23,6 @@ def test_luhn_rejects_bad_checkdigit() -> None:
 def test_luhn_rejects_non_digits_and_empty() -> None:
     assert not luhn_valid("")
     assert not luhn_valid("4111-1111")  # caller must strip separators first
-
-
-def _types(spans: list[Span]) -> list[tuple[str, int, int]]:
-    return [(s.type, s.start, s.end) for s in spans]
 
 
 def test_email_positive() -> None:

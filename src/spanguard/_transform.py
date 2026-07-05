@@ -5,7 +5,7 @@ from __future__ import annotations
 from spanguard.result import Span
 
 
-def _replacement(span: Span, original: str, mode: str, mask_char: str) -> str:
+def _replacement(span: Span, mode: str, mask_char: str) -> str:
     if mode == "mask":
         return mask_char * span.length
     if mode == "placeholder":
@@ -22,7 +22,7 @@ def apply_spans(text: str, spans: list[Span], mode: str, mask_char: str) -> str:
     cursor = 0
     for span in ordered:
         out.append(text[cursor:span.start])
-        out.append(_replacement(span, text[span.start:span.end], mode, mask_char))
+        out.append(_replacement(span, mode, mask_char))
         cursor = span.end
     out.append(text[cursor:])
     return "".join(out)
