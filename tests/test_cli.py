@@ -60,6 +60,21 @@ def test_redact_audit_json_to_stderr(tmp_path, capsys) -> None:  # type: ignore[
     assert "jane@x.com" not in captured.err
 
 
+def test_redact_mask_stdout_is_utf8_safe(tmp_path, capsys, monkeypatch) -> None:  # type: ignore[no-untyped-def]
+    # Regression: default mask mode emits U+2588; the CLI must force UTF-8 on
+    # its streams so writing to a non-UTF-8 console does not crash. We assert
+    # main() makes stdout UTF-8-capable and the mask char is present + encodable.
+    path = tmp_path / "in.txt"
+    path.write_text("mail jane@x.com", encoding="utf-8")
+    rc = main(["redact", str(path), "--mode", "mask", "--entities", "EMAIL"])
+    assert rc == 0
+    out = capsys.readouterr().out
+    assert "█" in out
+    # the emitted text must be encodable as UTF-8 without error (the crash was
+    # an encode failure); this would raise if any surrogate/unencodable slipped in
+    out.encode("utf-8")
+
+
 def test_missing_file_errors(capsys) -> None:  # type: ignore[no-untyped-def]
     rc = main(["scan", "does_not_exist_12345.txt"])
     assert rc == 2
