@@ -4,6 +4,7 @@ from spanguard.policy import Policy
 from spanguard.recognizers.base import Recognizer
 from spanguard.redactor import Redactor
 from spanguard.result import AuditRecord, RedactionResult, Span
+from spanguard.streaming import StreamRedactor
 from spanguard.tokenize import Keyring
 
 __version__ = "0.1.0"
@@ -15,4 +16,5 @@ __all__ = [
     "RedactionResult",
     "Redactor",
     "Span",
+    "StreamRedactor",
 ]
