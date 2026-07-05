@@ -31,8 +31,24 @@ class Redactor:
                 if e in DEFAULT_RECOGNIZERS
             ]
         self.recognizers = recognizers
-        self._hmac_key = resolve_key(hmac_key, "SPANGUARD_HMAC_KEY")
-        self.keyring = Keyring(resolve_key(tokenize_key, "SPANGUARD_TOKENIZE_KEY"))
+        self._hmac_key_arg = hmac_key
+        self._tokenize_key_arg = tokenize_key
+        self._hmac_key_cached: bytes | None = None
+        self._keyring_cached: Keyring | None = None
+
+    @property
+    def _hmac_key(self) -> bytes:
+        if self._hmac_key_cached is None:
+            self._hmac_key_cached = resolve_key(self._hmac_key_arg, "SPANGUARD_HMAC_KEY")
+        return self._hmac_key_cached
+
+    @property
+    def keyring(self) -> Keyring:
+        if self._keyring_cached is None:
+            self._keyring_cached = Keyring(
+                resolve_key(self._tokenize_key_arg, "SPANGUARD_TOKENIZE_KEY")
+            )
+        return self._keyring_cached
 
     def _detect(self, text: str) -> list[Span]:
         spans: list[Span] = []

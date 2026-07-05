@@ -1,3 +1,5 @@
+import warnings
+
 from spanguard.policy import Policy
 from spanguard.redactor import Redactor
 from spanguard.tokenize import Keyring
@@ -61,3 +63,37 @@ def test_audit_still_leak_free_for_hash_and_tokenize() -> None:
             {"counts": res.audit.counts, "policy_hash": res.audit.policy_hash, "ts": res.audit.ts}
         )
         assert raw not in blob
+
+
+def test_mask_mode_emits_no_key_warnings() -> None:
+    # mask/placeholder use no key, so constructing + redacting must not warn
+    # about ephemeral keys (regression: keys were eagerly resolved).
+    with warnings.catch_warnings():
+        warnings.simplefilter("error")  # any warning becomes an error
+        r = Redactor(Policy(mode="mask", entities=["EMAIL"]))
+        r.redact("mail jane@x.com")  # must not raise
+
+
+def test_placeholder_mode_emits_no_key_warnings() -> None:
+    with warnings.catch_warnings():
+        warnings.simplefilter("error")
+        r = Redactor(Policy(mode="placeholder", entities=["EMAIL"]))
+        r.redact("mail jane@x.com")
+
+
+def test_tokenize_still_deterministic_after_lazy_keyring() -> None:
+    # lazy keyring must still be cached so repeated redactions are stable
+    r = Redactor(Policy(mode="tokenize", entities=["EMAIL"]), tokenize_key=b"k")
+    a = r.redact("x jane@x.com").text
+    b = r.redact("x jane@x.com").text
+    assert a == b
+    # reveal still works via the (now lazily-created, cached) keyring
+    assert r.reveal(a, keyring=r.keyring) == "x jane@x.com"
+
+
+def test_explicit_hmac_key_no_warning() -> None:
+    # providing a key explicitly means no ephemeral fallback -> no warning even in hash mode
+    with warnings.catch_warnings():
+        warnings.simplefilter("error")
+        r = Redactor(Policy(mode="hash", entities=["EMAIL"]), hmac_key=b"k")
+        r.redact("mail jane@x.com")
