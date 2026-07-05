@@ -22,16 +22,18 @@ def test_equal_length_priority_tiebreak() -> None:
     assert [s.type for s in out] == ["SSN"]
 
 
-def test_chain_of_overlaps_keeps_best_each_region() -> None:
+def test_chain_of_overlaps_keeps_non_overlapping_survivors() -> None:
+    # DOB[0,4) and API_KEY[12,40) do NOT overlap each other; PHONE[2,14)
+    # overlaps both. API_KEY beats PHONE (longer), so PHONE is discarded.
+    # DOB overlapped only the discarded PHONE, not the surviving API_KEY,
+    # so DOB is an independent real detection and MUST be kept.
     spans = [
         Span("DOB", 0, 4),
-        Span("PHONE", 2, 14),   # longest, overlaps DOB and API_KEY start
+        Span("PHONE", 2, 14),
         Span("API_KEY", 12, 40),
     ]
     out = resolve_overlaps(spans)
-    # PHONE beats DOB (longer); API_KEY starts at 12 which PHONE covers up to 14,
-    # so API_KEY (12-40) overlaps PHONE -> longest wins: API_KEY (28) > PHONE (12).
-    assert [(s.type) for s in out] == ["API_KEY"]
+    assert [(s.type, s.start, s.end) for s in out] == [("DOB", 0, 4), ("API_KEY", 12, 40)]
 
 
 def test_empty() -> None:
