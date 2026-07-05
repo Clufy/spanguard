@@ -2,7 +2,7 @@ import re
 
 from spanguard._transform import apply_spans
 from spanguard.policy import Policy
-from spanguard.redactor import Redactor, _trim_separators
+from spanguard.redactor import Redactor
 from spanguard.result import RedactionResult, Span
 
 
@@ -51,27 +51,6 @@ def test_redactor_overlap_resolved_before_transform() -> None:
     r = Redactor(Policy(mode="placeholder", entities=["CREDIT_CARD"]))
     res = r.redact("pay 4111 1111 1111 1111 now")
     assert res.text == "pay [CREDIT_CARD] now"
-
-
-def test_redactor_trims_span_boundary_separators() -> None:
-    # Regression: a regex candidate span (e.g. CREDIT_CARD) can over-consume
-    # a trailing separator character next to a word boundary; the redactor
-    # must trim it so the surrounding text/spacing is preserved exactly.
-    text = "4111 1111 1111 1111 now"
-    span = Span("CREDIT_CARD", 0, len(text) - len("now"))  # includes trailing space
-    trimmed = _trim_separators(span, text)
-    assert text[trimmed.start:trimmed.end] == "4111 1111 1111 1111"
-
-    # Leading separator is trimmed symmetrically.
-    text2 = " 4111111111111111"
-    span2 = Span("CREDIT_CARD", 0, len(text2))
-    trimmed2 = _trim_separators(span2, text2)
-    assert text2[trimmed2.start:trimmed2.end] == "4111111111111111"
-
-    # A clean span (no boundary separators) is returned unchanged (identity).
-    text3 = "4111111111111111"
-    span3 = Span("CREDIT_CARD", 0, len(text3))
-    assert _trim_separators(span3, text3) is span3
 
 
 def test_redactor_audit_policy_hash_matches_policy() -> None:

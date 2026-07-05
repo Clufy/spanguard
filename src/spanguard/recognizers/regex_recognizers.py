@@ -25,7 +25,7 @@ _DOB = re.compile(
     r"(?<!\d)(?:(0[1-9]|1[0-2])/(0[1-9]|[12]\d|3[01])/(\d{4})"
     r"|(\d{4})-(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01]))(?!\d)"
 )
-_CC_CANDIDATE = re.compile(r"(?<!\d)(?:\d[ -]?){13,19}(?!\d)")
+_CC_CANDIDATE = re.compile(r"(?<!\d)\d(?:[ -]?\d){12,18}(?!\d)")
 # API keys: known prefixes, or a long high-entropy alnum run.
 _API_KEY = re.compile(
     r"\b(?:sk-[A-Za-z0-9]{20,}"

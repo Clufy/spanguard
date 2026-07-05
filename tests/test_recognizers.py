@@ -86,6 +86,20 @@ def test_credit_card_luhn_gated() -> None:
     assert r.recognize("card 4111 1111 1111 1112 no") == []
 
 
+def test_credit_card_span_excludes_trailing_separator() -> None:
+    # Regression: the candidate regex must not consume a trailing space/dash.
+    r = CreditCardRecognizer()
+    text = "pay 4111 1111 1111 1111 now"
+    spans = r.recognize(text)
+    assert len(spans) == 1
+    assert text[spans[0].start:spans[0].end] == "4111 1111 1111 1111"  # no trailing space
+    # dash-separated, trailing punctuation:
+    text2 = "card 4111-1111-1111-1111."
+    spans2 = r.recognize(text2)
+    assert len(spans2) == 1
+    assert text2[spans2[0].start:spans2[0].end] == "4111-1111-1111-1111"
+
+
 def test_api_key_positive_and_negative() -> None:
     r = APIKeyRecognizer()
     assert len(r.recognize("key sk-abcDEF0123456789abcDEF0123 end")) == 1
