@@ -82,3 +82,54 @@ def test_empty_feed_and_flush() -> None:
     sr = StreamRedactor(r)
     assert sr.feed("") == ""
     assert sr.flush() == ""
+
+
+def test_stream_phone_with_internal_spaces_not_leaked() -> None:
+    # Regression: a PHONE containing internal spaces, followed by a long
+    # unbroken token within one tail-length of the end, must NOT be cut on its
+    # internal space (which would leak the raw number).
+    text = "start " + "555 123 4567" + "y" * 120
+    policy = Policy(mode="placeholder", entities=["PHONE"])
+    r = Redactor(policy)
+    sr = StreamRedactor(r)
+    streamed = sr.feed(text) + sr.flush()
+    assert streamed == r.redact(text).text
+    assert "555 123 4567" not in streamed
+    assert "[PHONE]" in streamed
+
+
+def test_stream_mrn_left_context_preserved() -> None:
+    # Regression: MRN detection needs the "MRN:" prefix; the emitted span covers
+    # only the digits. A cut must not separate the prefix from the digits.
+    text = "note MRN: 1234567 " + "z" * 130
+    policy = Policy(mode="placeholder", entities=["MRN"])
+    r = Redactor(policy)
+    sr = StreamRedactor(r)
+    streamed = sr.feed(text) + sr.flush()
+    assert streamed == r.redact(text).text
+    assert "1234567" not in streamed
+
+
+def test_stream_property_all_modes_internal_separators() -> None:
+    import random
+
+    text = (
+        "ph 555 123 4567 card 4111 1111 1111 1111 MRN: 1234567 "
+        "mail a.b@sub.example.co end" + "z" * 150
+    )
+    for mode in ("mask", "placeholder", "hash", "tokenize"):
+        policy = Policy(mode=mode, entities=["PHONE", "CREDIT_CARD", "MRN", "EMAIL"])
+        keys = {"hmac_key": b"k", "tokenize_key": b"k"}
+        one_shot = Redactor(policy, **keys).redact(text).text  # type: ignore[arg-type]
+        rnd = random.Random(20260706)
+        for _ in range(100):
+            r = Redactor(policy, **keys)  # type: ignore[arg-type]
+            sr = StreamRedactor(r)
+            out: list[str] = []
+            i = 0
+            while i < len(text):
+                step = rnd.randint(1, 9)
+                out.append(sr.feed(text[i : i + step]))
+                i += step
+            out.append(sr.flush())
+            assert "".join(out) == one_shot
