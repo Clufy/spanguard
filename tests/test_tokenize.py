@@ -54,3 +54,23 @@ def test_wrong_keyring_cannot_reveal() -> None:
     tok = kr1.tokenize("EMAIL", "jane@x.com")
     kr2 = Keyring(b"key-two")
     assert kr2.reveal(f"here {tok}") == f"here {tok}"   # unchanged
+
+
+def test_reveal_does_not_re_expand_tokens_embedded_in_raw_values() -> None:
+    # Adversarial: token A's raw value literally contains token B's string,
+    # and A is issued before B. A single-pass reveal must restore A's raw
+    # exactly and must NOT re-expand the embedded B token (which would leak
+    # B's raw value into a reveal of text that only contained token A).
+    from spanguard.tokenize import hmac_digest, make_token
+
+    kr = Keyring(b"secret")
+    tok_b_pre = make_token("PHONE", hmac_digest(b"secret", "PHONE", "555-000-1111"))
+    raw_a = "x" + tok_b_pre + "y"
+    tok_a = kr.tokenize("EMAIL", raw_a)          # inserted first
+    tok_b = kr.tokenize("PHONE", "555-000-1111")  # inserted second
+    assert tok_b == tok_b_pre
+    # revealing text that contains ONLY token A restores raw_a verbatim...
+    revealed = kr.reveal(tok_a)
+    assert revealed == raw_a
+    # ...and does NOT leak B's raw value
+    assert "555-000-1111" not in revealed

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import hmac
+import re
 from hashlib import sha256
 
 _DIGEST_LEN = 16
@@ -40,11 +41,16 @@ class Keyring:
         return self._map.get(token)
 
     def reveal(self, text: str) -> str:
-        """Replace every token this keyring issued with its original value."""
-        result = text
-        for token, raw in self._map.items():
-            result = result.replace(token, raw)
-        return result
+        """Replace every token this keyring issued with its original value.
+
+        Substitution is a single left-to-right pass (one re.sub over an
+        alternation of all issued tokens), so a raw value that happens to
+        contain another issued token's string is never re-expanded.
+        """
+        if not self._map:
+            return text
+        pattern = re.compile("|".join(re.escape(tok) for tok in self._map))
+        return pattern.sub(lambda m: self._map[m.group(0)], text)
 
     @property
     def tokens(self) -> frozenset[str]:
