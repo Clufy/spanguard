@@ -25,7 +25,22 @@ _DOB = re.compile(
     r"(?<!\d)(?:(0[1-9]|1[0-2])/(0[1-9]|[12]\d|3[01])/(\d{4})"
     r"|(\d{4})-(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01]))(?!\d)"
 )
-_CC_CANDIDATE = re.compile(r"(?<!\d)\d(?:[ -]?\d){12,18}(?!\d)")
+# A credit card: a contiguous 13-19 digit run, OR standard printed groupings
+# (4-4-4-4 / 4-4-4-3 for Visa/MC/Discover, 4-6-5 for Amex) separated by a single
+# space or dash. Grouping-awareness prevents merging adjacent numbers (e.g. a
+# phone followed by a card) into one bogus run. Each candidate is Luhn-checked.
+_CARD = re.compile(
+    r"""
+    (?<![\d-])
+    (?:
+        \d{13,19}
+      | \d{4}(?:[ -]\d{4}){2}[ -]\d{1,4}
+      | \d{4}[ -]\d{6}[ -]\d{5}
+    )
+    (?![\d-])
+    """,
+    re.VERBOSE,
+)
 # API keys: known prefixes, or a long high-entropy alnum run.
 _API_KEY = re.compile(
     r"\b(?:sk-[A-Za-z0-9]{20,}"
@@ -86,13 +101,13 @@ class APIKeyRecognizer(_RegexRecognizer):
 
 
 class CreditCardRecognizer:
-    """Digit runs 13-19 long that pass Luhn after stripping separators."""
+    """Credit cards: contiguous or standard-grouped digit sequences, Luhn-valid."""
 
     entity_type = "CREDIT_CARD"
 
     def recognize(self, text: str) -> list[Span]:
         spans: list[Span] = []
-        for m in _CC_CANDIDATE.finditer(text):
+        for m in _CARD.finditer(text):
             digits = re.sub(r"[ -]", "", m.group())
             if 13 <= len(digits) <= 19 and luhn_valid(digits):
                 spans.append(Span(type="CREDIT_CARD", start=m.start(), end=m.end()))

@@ -75,10 +75,44 @@ def test_dob_positive_and_negative() -> None:
     assert r.recognize("score 99/99/9999 invalid") == []
 
 
-def test_credit_card_luhn_gated() -> None:
+def test_credit_card_groupings_and_luhn() -> None:
     r = CreditCardRecognizer()
-    assert len(r.recognize("card 4111 1111 1111 1111 ok")) == 1
-    assert r.recognize("card 4111 1111 1111 1112 no") == []
+
+    def one(text: str) -> str:
+        spans = r.recognize(text)
+        assert len(spans) == 1, f"{text!r} -> {spans}"
+        return text[spans[0].start : spans[0].end]
+
+    # contiguous, spaced, dashed, amex (4-6-5 and contiguous)
+    assert one("card 4111111111111111 end") == "4111111111111111"
+    assert one("card 4111 1111 1111 1111 end") == "4111 1111 1111 1111"
+    assert one("card 4111-1111-1111-1111 end") == "4111-1111-1111-1111"
+    assert one("amex 3782 822463 10005 end") == "3782 822463 10005"
+    assert one("amex 378282246310005 end") == "378282246310005"
+
+
+def test_credit_card_back_to_back_with_phone_detected() -> None:
+    # Regression: a phone immediately followed by a card must not merge into one
+    # over-long digit run that fails Luhn; the card must be detected.
+    r = CreditCardRecognizer()
+    text = "call 555-123-4567 4111 1111 1111 1111 end"
+    spans = r.recognize(text)
+    assert len(spans) == 1
+    assert text[spans[0].start : spans[0].end] == "4111 1111 1111 1111"
+
+
+def test_credit_card_negatives() -> None:
+    r = CreditCardRecognizer()
+    assert r.recognize("num 4111 1111 1111 1112 x") == []      # bad Luhn
+    assert r.recognize("id 994111111111111100 x") == []        # not card-grouped digit soup
+    assert r.recognize("short 4111 1111 x") == []              # too few digits
+
+
+def test_two_cards_in_one_string() -> None:
+    r = CreditCardRecognizer()
+    text = "a 4111 1111 1111 1111 and 5500 0055 5555 5559 b"
+    spans = r.recognize(text)
+    assert len(spans) == 2
 
 
 def test_credit_card_span_excludes_trailing_separator() -> None:
