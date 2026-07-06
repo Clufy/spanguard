@@ -1,0 +1,56 @@
+/* spanguard docs — small, tasteful polish on top of Material defaults. */
+
+/* Slightly tighter, more confident landing-page heading. */
+.md-typeset h1 {
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+/* Hero block used at the top of docs/index.md. */
+.sg-hero {
+  margin: 0 0 1.5rem;
+  padding: 1.5rem 1.75rem;
+  border-radius: 0.5rem;
+  background: linear-gradient(135deg, var(--md-primary-fg-color) 0%, #0b3d3a 100%);
+  color: var(--md-primary-bg-color);
+}
+
+.sg-hero h1 {
+  margin-top: 0;
+  color: inherit;
+}
+
+.sg-hero p {
+  color: inherit;
+  opacity: 0.92;
+  font-size: 1.05rem;
+  max-width: 42rem;
+}
+
+/* Feature grid cards (pymdownx grid + card markdown) get a touch more
+   breathing room and a subtle hover lift. */
+.md-typeset .grid.cards > ul > li {
+  transition: transform 0.12s ease, box-shadow 0.12s ease;
+}
+
+.md-typeset .grid.cards > ul > li:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--md-shadow-z2);
+}
+
+/* Admonitions: a bit more vertical rhythm so callouts don't feel cramped
+   next to surrounding prose. */
+.md-typeset .admonition,
+.md-typeset details {
+  margin: 1.25em 0;
+}
+
+/* Code blocks: slightly rounder corners, consistent with the admonitions
+   above, and a hair more padding for readability. */
+.md-typeset pre > code {
+  border-radius: 0.25rem;
+}
+
+.md-typeset .highlight {
+  border-radius: 0.25rem;
+}

@@ -1,0 +1,87 @@
+name: Bug report
+description: Report a problem with spanguard (detector miss, incorrect redaction, streaming/CLI bug, etc.)
+title: "bug: "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to report a bug.
+
+        **IMPORTANT — do not paste real PII/PHI or other sensitive data into this
+        issue.** GitHub issues are public. Please reproduce the problem using
+        synthetic/fake data only, e.g. `jane@example.com`, `555-123-4567`,
+        `123-45-6789`. If the bug is a security-sensitive redaction bypass or a
+        way sensitive data can leak (rather than a general correctness bug),
+        please use [private vulnerability reporting](https://github.com/Clufy/spanguard/security/advisories/new)
+        instead of a public issue — see [SECURITY.md](https://github.com/Clufy/spanguard/blob/master/SECURITY.md).
+
+  - type: checkboxes
+    id: no-real-pii
+    attributes:
+      label: Confirmation
+      options:
+        - label: I have NOT included any real PII/PHI or other sensitive data in this report — all examples below use synthetic/fake data.
+          required: true
+        - label: This is a general bug, not a security-sensitive leak or detector bypass (if it is, I will use private vulnerability reporting instead).
+          required: true
+
+  - type: input
+    id: spanguard-version
+    attributes:
+      label: spanguard version
+      description: Output of `pip show spanguard` (or `uv pip show spanguard`), or the git commit if installed from source.
+      placeholder: "0.1.0"
+    validations:
+      required: true
+
+  - type: input
+    id: python-version
+    attributes:
+      label: Python version
+      description: Output of `python --version`.
+      placeholder: "3.12.4"
+    validations:
+      required: true
+
+  - type: textarea
+    id: repro
+    attributes:
+      label: Minimal reproduction
+      description: >
+        A minimal, self-contained code snippet that reproduces the issue, using
+        synthetic data only. Include the `Policy`/`Redactor` configuration you
+        used.
+      render: python
+      placeholder: |
+        from spanguard import Redactor, Policy
+
+        policy = Policy(mode="placeholder", entities=("EMAIL",))
+        result = Redactor(policy).redact("Contact: jane@example.com")
+        print(result.text)
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+      description: What did you expect to happen?
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior
+      description: What actually happened? Include the full output/traceback if relevant (with any sensitive data replaced by synthetic placeholders).
+    validations:
+      required: true
+
+  - type: textarea
+    id: context
+    attributes:
+      label: Additional context
+      description: Anything else relevant — e.g. whether the `[ner]` extra is installed, whether this happens in streaming mode, OS, etc.
+    validations:
+      required: false

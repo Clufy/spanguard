@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" width="48" height="48" role="img" aria-label="spanguard logo">
+  <path d="M24 3
+           L41 9
+           V22
+           C41 33 34.5 41 24 45
+           C13.5 41 7 33 7 22
+           V9
+           Z"
+        fill="#0f766e" stroke="#0f766e" stroke-width="1.5" stroke-linejoin="round"/>
+  <rect x="14" y="18" width="20" height="4.5" rx="2.25" fill="#e6fffb"/>
+  <rect x="14" y="25.5" width="14" height="4.5" rx="2.25" fill="#e6fffb"/>
+</svg>

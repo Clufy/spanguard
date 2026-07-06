@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Documentation
+    url: https://clufy.github.io/spanguard
+    about: Check the docs (quickstart, recognizers, streaming, CLI, known limitations) before filing an issue — your question may already be answered there.
+  - name: Report a security vulnerability
+    url: https://github.com/Clufy/spanguard/security/advisories/new
+    about: For redaction bypasses, audit-record leaks, or other security-sensitive issues, please use private vulnerability reporting instead of a public issue.

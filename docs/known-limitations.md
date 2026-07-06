@@ -47,10 +47,19 @@ for `EMAIL` or drop `"EMAIL"` from `Policy.entities` and add your own pattern.
 `SpacyRecognizer` is not part of the default recognizer set and is not
 installed by a plain `pip install spanguard`. To use it you need:
 
-```bash
-pip install spanguard[ner]
-python -m spacy download en_core_web_sm
-```
+=== "pip"
+
+    ```bash
+    pip install spanguard[ner]
+    python -m spacy download en_core_web_sm
+    ```
+
+=== "uv"
+
+    ```bash
+    uv add "spanguard[ner]"
+    uv run python -m spacy download en_core_web_sm
+    ```
 
 spaCy is imported lazily specifically so `import spanguard` stays fast and
 dependency-light without the extra. If the extra isn't installed,
@@ -63,19 +72,20 @@ from the model's training data.
 
 ## The ephemeral-key warning
 
-`hash` and `tokenize` modes need an HMAC key to produce output that is
-reproducible across runs (and, for `tokenize`, reversible via
-`Redactor.reveal()`). If you don't pass `hmac_key=...` / `tokenize_key=...`
-explicitly and don't set the `SPANGUARD_HMAC_KEY` / `SPANGUARD_TOKENIZE_KEY`
-environment variables, spanguard falls back to a **fresh random key
-generated per process** and emits:
+!!! warning "Set an explicit key in production"
+    `hash` and `tokenize` modes need an HMAC key to produce output that is
+    reproducible across runs (and, for `tokenize`, reversible via
+    `Redactor.reveal()`). If you don't pass `hmac_key=...` /
+    `tokenize_key=...` explicitly and don't set the `SPANGUARD_HMAC_KEY` /
+    `SPANGUARD_TOKENIZE_KEY` environment variables, spanguard falls back to
+    a **fresh random key generated per process** and emits:
 
-```text
-UserWarning: No key provided and SPANGUARD_HMAC_KEY is unset; using an
-ephemeral random key. Hashes/tokens will not be reproducible across
-processes and reveal() will only work within this process. Set the key
-explicitly or via the env var for stable output.
-```
+    ```text
+    UserWarning: No key provided and SPANGUARD_HMAC_KEY is unset; using an
+    ephemeral random key. Hashes/tokens will not be reproducible across
+    processes and reveal() will only work within this process. Set the key
+    explicitly or via the env var for stable output.
+    ```
 
 This means: hash digests or tokens produced by two separate process runs
 (or two separate `Redactor` instances without a shared explicit key) will

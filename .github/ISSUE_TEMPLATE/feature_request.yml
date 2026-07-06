@@ -1,0 +1,59 @@
+name: Feature request
+description: Suggest a new detector, redaction mode, or other enhancement for spanguard
+title: "feat: "
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for suggesting an improvement to spanguard.
+
+        As with bug reports: please describe your use case using synthetic
+        examples only — do not paste real PII/PHI into this issue.
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem / use case
+      description: >
+        What problem are you trying to solve? What's missing today? If this is
+        about a new entity type or detector, describe the format(s) you need
+        to detect (with synthetic examples).
+      placeholder: |
+        I need to detect [entity type] in my data, e.g. text like
+        "example-synthetic-value-123" — spanguard currently has no recognizer
+        for this format.
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposed-solution
+    attributes:
+      label: Proposed solution
+      description: >
+        How would you like this to work? If you're proposing a new detector,
+        note whether it could be a regex `Recognizer`, whether it needs
+        context-anchoring (like `MRN`), or whether it needs NER/model-based
+        detection.
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+      description: >
+        Have you considered writing a custom `Recognizer` for this yourself
+        (see the docs on Recognizers)? If so, why doesn't that work for your
+        case — e.g. does it need to be a built-in default, or shared across
+        projects?
+    validations:
+      required: false
+
+  - type: textarea
+    id: context
+    attributes:
+      label: Additional context
+      description: Anything else — links, related issues, references to similar detectors in other tools, etc.
+    validations:
+      required: false

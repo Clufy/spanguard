@@ -1,0 +1,22 @@
+cff-version: 1.2.0
+message: "If you use spanguard in your work, please cite it using the metadata below."
+type: software
+title: spanguard
+abstract: >-
+  Detect and redact PII/PHI in text and streaming transcripts, with leak-free
+  audit records, reversible tokenization, an optional NER extra, and a CLI.
+authors:
+  - name: "spanguard authors"
+    alias: "Clufy"
+repository-code: "https://github.com/Clufy/spanguard"
+url: "https://clufy.github.io/spanguard"
+license: MIT
+version: 0.1.0
+date-released: "2026-07-06"
+keywords:
+  - pii
+  - phi
+  - redaction
+  - privacy
+  - compliance
+  - nlp
