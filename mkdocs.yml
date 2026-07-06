@@ -1,0 +1,19 @@
+site_name: spanguard
+site_description: Detect and redact PII/PHI in text and streaming transcripts.
+docs_dir: docs
+exclude_docs: |
+  superpowers/
+theme:
+  name: material
+  features: [content.code.copy]
+nav:
+  - Home: index.md
+  - Quickstart: quickstart.md
+  - Recognizers: recognizers.md
+  - Streaming: streaming.md
+  - CLI: cli.md
+  - Known limitations: known-limitations.md
+markdown_extensions:
+  - admonition
+  - pymdownx.highlight
+  - pymdownx.superfences
