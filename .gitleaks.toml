@@ -1,0 +1,13 @@
+# Extend gitleaks' default rules; only add an allowlist for known-safe fixtures.
+[extend]
+useDefault = true
+
+# ponytail: allowlist the synthetic secrets in the recognizer test suite.
+# These are non-credentials — AWS's own docs placeholder and a fabricated sk- string —
+# used to verify detection. Add real exceptions here (by regex) only when equally certain.
+[allowlist]
+description = "Synthetic test fixtures, not real credentials"
+regexes = [
+  '''AKIAIOSFODNN7EXAMPLE''',
+  '''sk-abcDEF0123456789abcDEF0123''',
+]
