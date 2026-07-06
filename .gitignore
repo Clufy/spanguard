@@ -1,16 +1,49 @@
-# Python
+# Python bytecode / caches
 __pycache__/
-*.pyc
-.venv/
-venv/
+*.py[cod]
+*$py.class
 .mypy_cache/
 .ruff_cache/
 .pytest_cache/
+.hypothesis/
+
+# Virtual environments
+.venv/
+venv/
+env/
+ENV/
+
+# Packaging / build artifacts
 *.egg-info/
+*.egg
 dist/
 build/
+wheels/
+pip-wheel-metadata/
+
+# Test / coverage output
 .coverage
+.coverage.*
 htmlcov/
 coverage.xml
-.env
+.tox/
+.nox/
+
+# Docs build output
 site/
+
+# Secrets / environment
+.env
+.env.*
+!.env.example
+
+# Superpowers workflow scratch (task briefs, reports, review diffs, ledger)
+.superpowers/
+
+# OS / editor cruft
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
+*~
