@@ -42,8 +42,8 @@ class AuditRecord:
 
 @dataclass(frozen=True, slots=True)
 class RedactionResult:
-    """Result of a redaction: transformed `text`, the `spans`, and `audit`."""
+    """Result of a redaction: transformed `text`, its `audit`, and the `spans`."""
 
     text: str
+    audit: AuditRecord
     spans: list[Span] = field(default_factory=list)
-    audit: AuditRecord | None = None

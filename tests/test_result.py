@@ -36,7 +36,15 @@ def test_audit_has_no_raw_value_fields() -> None:
 
 def test_redaction_result_holds_parts() -> None:
     audit = AuditRecord.from_spans([], policy_hash="h")
-    r = RedactionResult(text="x", spans=[], audit=audit)
+    r = RedactionResult(text="x", audit=audit, spans=[])
     assert r.text == "x"
     assert r.spans == []
     assert r.audit is audit
+
+
+def test_redaction_result_audit_required() -> None:
+    try:
+        RedactionResult(text="x", spans=[])  # type: ignore[call-arg]
+    except TypeError:
+        return
+    raise AssertionError("RedactionResult should require audit")

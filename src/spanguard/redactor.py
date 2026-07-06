@@ -26,7 +26,7 @@ class Redactor:
         self.policy = policy
         if recognizers is None:
             recognizers = [
-                DEFAULT_RECOGNIZERS[e]  # type: ignore[misc]
+                DEFAULT_RECOGNIZERS[e]
                 for e in policy.entities
                 if e in DEFAULT_RECOGNIZERS
             ]
@@ -73,7 +73,7 @@ class Redactor:
             replace_raw=self._replace_raw,
         )
         audit = AuditRecord.from_spans(spans, policy_hash=self.policy.policy_hash())
-        return RedactionResult(text=redacted, spans=spans, audit=audit)
+        return RedactionResult(text=redacted, audit=audit, spans=spans)
 
     def reveal(self, text: str, keyring: Keyring | None = None) -> str:
         """Restore tokenized values using `keyring` (defaults to this Redactor's)."""

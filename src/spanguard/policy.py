@@ -9,7 +9,7 @@ from pydantic import BaseModel, ConfigDict
 
 RedactionMode = Literal["mask", "placeholder", "hash", "tokenize"]
 
-DEFAULT_ENTITIES: list[str] = [
+DEFAULT_ENTITIES: tuple[str, ...] = (
     "EMAIL",
     "PHONE",
     "SSN",
@@ -17,7 +17,7 @@ DEFAULT_ENTITIES: list[str] = [
     "DOB",
     "CREDIT_CARD",
     "API_KEY",
-]
+)
 
 
 class Policy(BaseModel):
@@ -26,7 +26,7 @@ class Policy(BaseModel):
     model_config = ConfigDict(frozen=True)
 
     mode: RedactionMode = "mask"
-    entities: list[str] = DEFAULT_ENTITIES
+    entities: tuple[str, ...] = DEFAULT_ENTITIES
     mask_char: str = "█"
 
     def policy_hash(self) -> str:

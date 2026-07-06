@@ -7,6 +7,7 @@ from typing import ClassVar
 
 from spanguard.result import Span
 
+from .base import Recognizer
 from .luhn import luhn_valid
 
 # --- patterns -------------------------------------------------------------
@@ -59,7 +60,7 @@ _API_KEY = re.compile(
 class _RegexRecognizer:
     """Shared base: emit one Span per full-match of `pattern`."""
 
-    entity_type: ClassVar[str]
+    entity_type: str
     pattern: ClassVar[re.Pattern[str]]
 
     def recognize(self, text: str) -> list[Span]:
@@ -120,7 +121,7 @@ class CreditCardRecognizer:
         return spans
 
 
-DEFAULT_RECOGNIZERS: dict[str, object] = {
+DEFAULT_RECOGNIZERS: dict[str, Recognizer] = {
     "EMAIL": EmailRecognizer(),
     "PHONE": PhoneRecognizer(),
     "SSN": SSNRecognizer(),

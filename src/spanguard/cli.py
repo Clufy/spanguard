@@ -50,9 +50,8 @@ def _read_file(path: str) -> str:
 
 def _cmd_scan(args: argparse.Namespace) -> int:
     text = _read_file(args.file)
-    policy = Policy(mode="placeholder", entities=_entities(args.entities))
+    policy = Policy(mode="placeholder", entities=tuple(_entities(args.entities)))
     result = Redactor(policy).redact(text)
-    assert result.audit is not None
     if args.json:
         print(json.dumps(
             {"counts": result.audit.counts,
@@ -70,9 +69,8 @@ def _cmd_scan(args: argparse.Namespace) -> int:
 
 def _cmd_redact(args: argparse.Namespace) -> int:
     text = _read_file(args.file)
-    policy = Policy(mode=args.mode, entities=_entities(args.entities))
+    policy = Policy(mode=args.mode, entities=tuple(_entities(args.entities)))
     result = Redactor(policy).redact(text)
-    assert result.audit is not None
     if args.out:
         Path(args.out).write_text(result.text, encoding="utf-8")
     else:

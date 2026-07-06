@@ -43,7 +43,7 @@ def test_entity_type_label_is_what_appears_in_output_and_audit() -> None:
             return [Span("CUSTOM_TOKEN", m.start(), m.end())
                     for m in re.finditer(r"SECRET-\d+", text)]
 
-    r = Redactor(Policy(mode="placeholder", entities=["CUSTOM_TOKEN"]),
+    r = Redactor(Policy(mode="placeholder", entities=("CUSTOM_TOKEN",)),
                  recognizers=[LabeledRecognizer()])
     res = r.redact("value SECRET-42 here")
     # the raw matched text is gone; only the label surfaces
