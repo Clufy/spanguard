@@ -27,8 +27,8 @@ docs = ["mkdocs-material>=9", "mkdocstrings[python]>=0.24"]
 spanguard = "spanguard.cli:main"
 
 [project.urls]
-Homepage = "https://github.com/spanguard/spanguard"
-Documentation = "https://spanguard.github.io/spanguard"
+Homepage = "https://github.com/Clufy/spanguard"
+Documentation = "https://clufy.github.io/spanguard"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/spanguard"]

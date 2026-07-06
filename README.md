@@ -1,9 +1,9 @@
 # spanguard
 
-[![CI](https://github.com/spanguard/spanguard/actions/workflows/ci.yml/badge.svg)](https://github.com/spanguard/spanguard/actions/workflows/ci.yml)
+[![CI](https://github.com/Clufy/spanguard/actions/workflows/ci.yml/badge.svg)](https://github.com/Clufy/spanguard/actions/workflows/ci.yml)
 [![PyPI](https://img.shields.io/pypi/v/spanguard.svg)](https://pypi.org/project/spanguard/)
-[![Coverage](https://img.shields.io/badge/coverage-97%25-brightgreen.svg)](https://github.com/spanguard/spanguard/actions/workflows/ci.yml)
-[![Docs](https://img.shields.io/badge/docs-mkdocs--material-blue.svg)](https://spanguard.github.io/spanguard)
+[![Coverage](https://img.shields.io/badge/coverage-97%25-brightgreen.svg)](https://github.com/Clufy/spanguard/actions/workflows/ci.yml)
+[![Docs](https://img.shields.io/badge/docs-mkdocs--material-blue.svg)](https://clufy.github.io/spanguard)
 
 Detect and redact PII/PHI (personally identifiable information and protected
 health information) in text and streaming transcripts, and produce a
@@ -53,7 +53,7 @@ print(revealed == text)
 # True
 ```
 
-See the [Quickstart docs](https://spanguard.github.io/spanguard/quickstart/)
+See the [Quickstart docs](https://clufy.github.io/spanguard/quickstart/)
 for notes on keys, the audit record, and `result.spans`.
 
 ## Built-in entity table
@@ -71,7 +71,7 @@ for notes on keys, the audit record, and `result.spans`.
 
 Four redaction modes are available on every `Policy`: `mask`, `placeholder`,
 `hash`, and `tokenize` (reversible via `Redactor.reveal()`). See
-[Recognizers](https://spanguard.github.io/spanguard/recognizers/) for the
+[Recognizers](https://clufy.github.io/spanguard/recognizers/) for the
 full detail and how to plug in a custom `Recognizer`.
 
 ## Install
@@ -90,7 +90,7 @@ python -m spacy download en_core_web_sm
 ## Docs
 
 Full documentation, including streaming redaction and the CLI, is at
-[spanguard.github.io/spanguard](https://spanguard.github.io/spanguard).
+[clufy.github.io/spanguard](https://clufy.github.io/spanguard).
 
 ## License
 
