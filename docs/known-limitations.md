@@ -30,6 +30,18 @@ no sensitive data. If this over-matches in your corpus, pass a narrower
 custom `Recognizer` for `API_KEY` (or omit `"API_KEY"` from `Policy.entities`
 and add your own prefix-anchored pattern).
 
+## `EMAIL` may over-match `@`-bearing non-email tokens
+
+`EMAIL` accepts Unicode local parts and a dotted, letters-only TLD, matching
+any `local@domain.tld`-shaped token bounded by whitespace or brackets. This
+deliberately errs toward redaction, so it can also flag `@`-bearing tokens
+that are not email addresses: the userinfo of a URL (`user:pw@host.example`),
+an SSH remote (`git@github.com`), a `name@2x.png`-style asset filename, or a
+config value like `key=val@host.io`. As with `API_KEY`, every such case
+over-redacts rather than leaking, so it is a precision cost, not a privacy
+gap. If it over-matches in your corpus, pass a narrower custom `Recognizer`
+for `EMAIL` or drop `"EMAIL"` from `Policy.entities` and add your own pattern.
+
 ## NER (`PERSON`/`LOCATION`) requires the `[ner]` extra and a downloaded model
 
 `SpacyRecognizer` is not part of the default recognizer set and is not
