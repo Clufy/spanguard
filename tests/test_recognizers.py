@@ -56,6 +56,28 @@ def test_email_still_rejects_non_emails() -> None:
     assert r.recognize("just words here") == []
 
 
+def test_email_glued_after_closing_bracket_is_detected() -> None:
+    # Regression: an email glued directly after ')' or ']' must not be dropped
+    # (the old lookbehind silently suppressed the whole match -> PII leak).
+    r = EmailRecognizer()
+    for text, want in [
+        ("x)jane@x.com", "jane@x.com"),
+        ("(note)bob@y.org", "bob@y.org"),
+        ('"jane@x.com"', "jane@x.com"),
+        ("see[ref]amy@z.net", "amy@z.net"),
+    ]:
+        spans = r.recognize(text)
+        assert len(spans) == 1, f"{text!r} -> {spans}"
+        assert text[spans[0].start : spans[0].end] == want
+
+
+def test_email_still_rejects_non_emails_after_fix() -> None:
+    r = EmailRecognizer()
+    for text in ["http://example.com/x", "python3.12", "3.14159", "example.com",
+                 "user@localhost", "192.168.1.1", "not@an@email", "trailing@dot."]:
+        assert r.recognize(text) == [], text
+
+
 def test_phone_positive_formats() -> None:
     r = PhoneRecognizer()
     for t in ["555-123-4567", "(555) 123-4567", "+1 555 123 4567"]:

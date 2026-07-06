@@ -11,12 +11,13 @@ from .luhn import luhn_valid
 
 # --- patterns -------------------------------------------------------------
 
-# Email: allow Unicode letters in the local part and domain labels (IDN-ish),
-# still requiring a single @ and a dotted TLD of >= 2 Unicode LETTERS. The TLD
-# class `[^\W\d_]` matches letters only, so trailing punctuation (jane@x.com!)
-# is correctly excluded. Verified against all positive+negative email tests.
+# Email: Unicode local part and domain labels; a single @ and a dotted TLD of
+# >= 2 Unicode LETTERS (`[^\W\d_]`). Bracket/quote/comma/semicolon/colon chars
+# are excluded from the local+domain classes so the match neither gloms onto
+# surrounding punctuation nor is dropped when glued to a preceding `)`/`]`.
 _EMAIL = re.compile(
-    r"(?<![^\s(<>:,;])[^\s@()<>]+@[^\s@()<>]+\.[^\W\d_]{2,}", re.UNICODE
+    r"[^\s@()<>\[\]{}\",;:]+@[^\s@()<>\[\]{}\",;:]+\.[^\W\d_]{2,}",
+    re.UNICODE,
 )
 # NANP-style: optional +country, 3-3-4 with -, ., space, or parens on area code.
 _PHONE = re.compile(
