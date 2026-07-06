@@ -1,0 +1,16 @@
+name: Publish
+on:
+  push:
+    tags: ["v*"]
+permissions:
+  id-token: write        # OIDC; NO PyPI token stored
+  contents: read
+jobs:
+  build-and-publish:
+    runs-on: ubuntu-latest
+    environment: pypi
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+      - run: uv build
+      - uses: pypa/gh-action-pypi-publish@release/v1
