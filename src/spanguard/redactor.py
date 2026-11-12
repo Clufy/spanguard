@@ -64,7 +64,10 @@ class Redactor:
         raise ValueError(f"no raw replacement for mode {self.policy.mode!r}")
 
     def redact(self, text: str) -> RedactionResult:
-        spans = self._detect(text)
+        return self._redact_with_spans(text, self._detect(text))
+
+    def _redact_with_spans(self, text: str, spans: list[Span]) -> RedactionResult:
+        """Redact `text` using already-resolved `spans` (from `_detect(text)`)."""
         redacted = apply_spans(
             text,
             spans,

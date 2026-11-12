@@ -2,10 +2,14 @@
 
 from __future__ import annotations
 
+import re
+
 from spanguard.redactor import Redactor
+from spanguard.result import Span
 
 _DEFAULT_TAIL = 128
 _MIN_TAIL = 64
+_WHITESPACE = re.compile(r"\s")
 
 
 class StreamRedactor:
@@ -35,12 +39,13 @@ class StreamRedactor:
         self._redactor = redactor
         self._tail = tail
         self._buffer = ""
+        self._ws_free_upto = 0  # buffer[:_ws_free_upto] has no whitespace
 
     @property
     def pending(self) -> int:
         return len(self._buffer)
 
-    def _safe_cut(self) -> int:
+    def _safe_cut(self) -> tuple[int, list[Span]]:
         """Largest separator index that provably reproduces the one-shot result.
 
         A cut at ``c`` (just after a whitespace char, ``c <= len - tail``) is
@@ -51,45 +56,52 @@ class StreamRedactor:
         positional guess -- is what makes "split == whole" hold even for
         entities that contain internal separators or need left context.
 
-        Returns 0 when no cut is safe yet (nothing may be emitted).
+        Returns ``(cut, prefix_spans)`` -- the verified detection result for
+        ``buffer[:cut]``, so the caller can emit without re-detecting -- or
+        ``(0, [])`` when no cut is safe yet (nothing may be emitted).
         """
         buffer = self._buffer
         limit = len(buffer) - self._tail
-        if limit <= 0:
-            return 0
+        # Cut points sit just after a whitespace char, latest first. `\s` is
+        # exactly str.isspace(); the C-level scan keeps whitespace-free
+        # streams cheap.
+        # The buffer only grows between cuts, so the known whitespace-free
+        # prefix is never rescanned: a separator-free stream costs O(n) total.
+        limit = max(limit, 0)
+        if _WHITESPACE.search(buffer, self._ws_free_upto, limit) is None:
+            self._ws_free_upto = limit
+            return 0, []  # no cut candidate: skip detection entirely
+        candidates = [m.end() for m in _WHITESPACE.finditer(buffer, 0, limit)][::-1]
         full = self._redactor._detect(buffer)
-        # ponytail: ~O(tail^2 * recognizers) — re-detects prefix and suffix per
-        # candidate separator; the buffer is tail-bounded (~128 chars) so this
-        # is small-constant work. If throughput matters, index separators /
-        # cache detection.
-        for c in range(limit, 0, -1):
-            if not buffer[c - 1].isspace():
-                continue
+        # ponytail: ~O(tail^2 * recognizers) worst case — re-detects prefix and
+        # suffix per candidate separator; in practice the first candidate that
+        # no span straddles is accepted, so a feed costs ~3 detection passes.
+        for c in candidates:
             if any(s.start < c < s.end for s in full):
                 continue  # a span straddles this cut
             pre_expected = [s for s in full if s.end <= c]
-            suf_expected = [
-                type(s)(s.type, s.start - c, s.end - c) for s in full if s.start >= c
-            ]
+            suf_expected = [Span(s.type, s.start - c, s.end - c) for s in full if s.start >= c]
             if self._redactor._detect(buffer[:c]) != pre_expected:
                 continue
             if self._redactor._detect(buffer[c:]) != suf_expected:
                 continue
-            return c
-        return 0
+            return c, pre_expected
+        return 0, []
 
     def feed(self, chunk: str) -> str:
         self._buffer += chunk
-        cut = self._safe_cut()
+        cut, spans = self._safe_cut()
         if cut == 0:
             return ""
         emit_src = self._buffer[:cut]
         self._buffer = self._buffer[cut:]
-        return self._redactor.redact(emit_src).text
+        self._ws_free_upto = 0
+        return self._redactor._redact_with_spans(emit_src, spans).text
 
     def flush(self) -> str:
         if not self._buffer:
             return ""
         out = self._redactor.redact(self._buffer).text
         self._buffer = ""
+        self._ws_free_upto = 0
         return out

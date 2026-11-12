@@ -2,6 +2,7 @@ import random
 
 from spanguard.policy import Policy
 from spanguard.redactor import Redactor
+from spanguard.result import Span
 from spanguard.streaming import StreamRedactor
 
 
@@ -156,3 +157,51 @@ def test_stream_property_all_modes_internal_separators() -> None:
                 i += step
             out.append(sr.flush())
             assert "".join(out) == one_shot
+
+
+class _CountingRecognizer:
+    """Wraps EMAIL detection and counts recognize() calls."""
+
+    entity_type = "EMAIL"
+
+    def __init__(self) -> None:
+        from spanguard.recognizers.regex_recognizers import EmailRecognizer
+
+        self.inner = EmailRecognizer()
+        self.calls = 0
+
+    def recognize(self, text: str) -> list[Span]:
+        self.calls += 1
+        return self.inner.recognize(text)
+
+
+def test_stream_without_whitespace_skips_detection() -> None:
+    rec = _CountingRecognizer()
+    sr = StreamRedactor(Redactor(Policy(mode="placeholder"), recognizers=[rec]))
+    for _ in range(50):
+        assert sr.feed("a" * 200) == ""
+    assert rec.calls == 0  # no cut candidate -> nothing to verify
+    assert sr.flush() == "a" * 10_000
+
+
+def test_stream_emit_reuses_verified_spans() -> None:
+    rec = _CountingRecognizer()
+    r = Redactor(Policy(mode="placeholder"), recognizers=[rec])
+    sr = StreamRedactor(r)
+    text = "mail jane@x.com now " * 20
+    out = sr.feed(text)
+    # whole-buffer + prefix + suffix verification; emitting re-detects nothing
+    assert rec.calls == 3
+    assert out + sr.flush() == r.redact(text).text
+
+
+def test_whitespace_free_stream_is_linear() -> None:
+    import time
+
+    r = Redactor(Policy(mode="placeholder"))
+    sr = StreamRedactor(r)
+    blob = "QUJD" * 500_000  # 2 MB, no separators
+    t0 = time.perf_counter()
+    for i in range(0, len(blob), 1000):
+        assert sr.feed(blob[i : i + 1000]) == ""
+    assert time.perf_counter() - t0 < 1.0
