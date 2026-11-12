@@ -7,6 +7,7 @@ import re
 from hashlib import sha256
 
 _DIGEST_LEN = 16
+_TOKEN_SHAPE = re.compile("⟦[^⟦⟧]*⟧")
 
 
 def hmac_digest(key: bytes, entity_type: str, raw: str) -> str:
@@ -30,10 +31,18 @@ class Keyring:
     def __init__(self, tokenize_key: bytes) -> None:
         self._key = tokenize_key
         self._map: dict[str, str] = {}
+        # Set when a label contains a token bracket, which defeats the
+        # bracket-delimited fast path in reveal().
+        self._bracketed_label = False
+        self._alternation: re.Pattern[str] | None = None
 
     def tokenize(self, entity_type: str, raw: str) -> str:
         digest = hmac_digest(self._key, entity_type, raw)
         token = make_token(entity_type, digest)
+        if token not in self._map:
+            self._alternation = None
+            if "⟦" in entity_type or "⟧" in entity_type:
+                self._bracketed_label = True
         self._map[token] = raw
         return token
 
@@ -49,8 +58,14 @@ class Keyring:
         """
         if not self._map:
             return text
-        pattern = re.compile("|".join(re.escape(tok) for tok in self._map))
-        return pattern.sub(lambda m: self._map[m.group(0)], text)
+        if not self._bracketed_label:
+            # Every issued token is ⟦...⟧ with no inner brackets, so scanning
+            # bracket-delimited candidates and looking each up is equivalent
+            # to the alternation below, in O(len(text)) regardless of map size.
+            return _TOKEN_SHAPE.sub(lambda m: self._map.get(m[0], m[0]), text)
+        if self._alternation is None:
+            self._alternation = re.compile("|".join(re.escape(tok) for tok in self._map))
+        return self._alternation.sub(lambda m: self._map[m[0]], text)
 
     @property
     def tokens(self) -> frozenset[str]:

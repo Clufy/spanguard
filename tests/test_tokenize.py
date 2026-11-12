@@ -74,3 +74,51 @@ def test_reveal_does_not_re_expand_tokens_embedded_in_raw_values() -> None:
     assert revealed == raw_a
     # ...and does NOT leak B's raw value
     assert "555-000-1111" not in revealed
+
+
+def test_reveal_scales_with_many_tokens() -> None:
+    import time
+
+    kr = Keyring(b"k")
+    raws = [f"user{i}@example.com" for i in range(30_000)]
+    text = " ".join(kr.tokenize("EMAIL", raw) for raw in raws)
+    t0 = time.perf_counter()
+    out = kr.reveal(text)
+    assert time.perf_counter() - t0 < 1.0
+    assert out == " ".join(raws)
+
+
+def test_reveal_bracketed_label_round_trips() -> None:
+    kr = Keyring(b"k")
+    tok = kr.tokenize("A⟧B", "secret-1")
+    tok2 = kr.tokenize("⟦X", "secret-2")
+    assert kr.reveal(f"<{tok}|{tok2}>") == "<secret-1|secret-2>"
+
+
+def test_reveal_leaves_unissued_token_shapes() -> None:
+    kr = Keyring(b"k")
+    tok = kr.tokenize("EMAIL", "jane@x.com")
+    fake = make_token("EMAIL", "0" * 16)
+    assert kr.reveal(fake) == fake
+    assert kr.reveal("⟦" + tok) == "⟦jane@x.com"
+    assert kr.reveal(f"{fake}{tok}⟧") == f"{fake}jane@x.com⟧"
+
+
+def test_reveal_matches_reference_random() -> None:
+    import random
+    import re
+
+    rng = random.Random(99)
+    for labels in (["EMAIL", "PHONE"], ["EMAIL", "A⟧B", "⟦"]):
+        kr = Keyring(b"k")
+        toks = [kr.tokenize(rng.choice(labels), f"v{i}") for i in range(20)]
+        mp = {t: kr.reveal_token(t) or "" for t in toks}
+        ref = re.compile("|".join(re.escape(t) for t in mp))
+
+        def expected(text: str, ref: re.Pattern[str] = ref, mp: dict[str, str] = mp) -> str:
+            return ref.sub(lambda m: mp[m[0]], text)
+
+        pieces = [*toks, "⟦", "⟧", "x", " ", make_token("EMAIL", "0" * 16)]
+        for _ in range(500):
+            s = "".join(rng.choice(pieces) for _ in range(rng.randint(0, 12)))
+            assert kr.reveal(s) == expected(s), repr(s)
