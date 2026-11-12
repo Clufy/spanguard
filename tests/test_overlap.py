@@ -41,7 +41,7 @@ def test_empty() -> None:
 
 
 def _reference_resolve(spans: list[Span]) -> list[Span]:
-    """The 0.1.0 quadratic algorithm, kept verbatim as a differential oracle."""
+    """The pre-release quadratic algorithm, kept verbatim as a differential oracle."""
     from spanguard._overlap import _rank
 
     chosen: list[Span] = []
@@ -71,5 +71,5 @@ def test_resolve_overlaps_scales() -> None:
     spans = [Span("EMAIL", i * 10, i * 10 + 5) for i in range(50_000)]
     t0 = time.perf_counter()
     out = resolve_overlaps(spans)
-    assert time.perf_counter() - t0 < 10.0  # 0.1.0 (quadratic) took >60 s
+    assert time.perf_counter() - t0 < 10.0  # the pre-release O(n^2) version took >60 s
     assert len(out) == 50_000

@@ -47,9 +47,8 @@ def test_stream_equals_one_shot_property_random_splits() -> None:
     text = "SSN 123-45-6789 card 4111 1111 1111 1111 mail a.b@sub.example.co end"
     policy = Policy(mode="mask", entities=("SSN", "CREDIT_CARD", "EMAIL"))
     one_shot = Redactor(policy).redact(text).text
-    rnd = random.Random(1234)  # deterministic
+    rnd = random.Random(1234)
     for _ in range(50):
-        # random chunk sizes 1..7
         sizes: list[int] = []
         remaining = len(text)
         while remaining > 0:

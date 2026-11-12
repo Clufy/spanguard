@@ -1,5 +1,5 @@
 [build-system]
-requires = ["hatchling"]
+requires = ["hatchling >= 1.26"]
 build-backend = "hatchling.build"
 
 [project]
@@ -9,12 +9,17 @@ description = "Detect and redact PII/PHI in text and streaming transcripts, with
 readme = "README.md"
 requires-python = ">=3.12"
 license = "MIT"
+license-files = ["LICENSE"]
 authors = [{ name = "spanguard authors" }]
 keywords = ["pii", "phi", "redaction", "compliance", "privacy"]
 classifiers = [
   "Development Status :: 3 - Alpha",
+  "Intended Audience :: Developers",
+  "Operating System :: OS Independent",
+  "Programming Language :: Python :: 3",
   "Programming Language :: Python :: 3.12",
-  "License :: OSI Approved :: MIT License",
+  "Topic :: Security",
+  "Topic :: Text Processing",
   "Typing :: Typed",
 ]
 dependencies = ["pydantic>=2.6,<3"]
@@ -29,6 +34,8 @@ spanguard = "spanguard.cli:main"
 [project.urls]
 Homepage = "https://github.com/Clufy/spanguard"
 Documentation = "https://clufy.github.io/spanguard"
+Issues = "https://github.com/Clufy/spanguard/issues"
+Changelog = "https://github.com/Clufy/spanguard/blob/master/CHANGELOG.md"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/spanguard"]

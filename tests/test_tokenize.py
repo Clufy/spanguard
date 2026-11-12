@@ -84,7 +84,7 @@ def test_reveal_scales_with_many_tokens() -> None:
     text = " ".join(kr.tokenize("EMAIL", raw) for raw in raws)
     t0 = time.perf_counter()
     out = kr.reveal(text)
-    assert time.perf_counter() - t0 < 4.0  # 0.1.0: ~11 s
+    assert time.perf_counter() - t0 < 4.0  # pre-release version: ~11 s
     assert out == " ".join(raws)
 
 

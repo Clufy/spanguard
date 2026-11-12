@@ -8,9 +8,7 @@ edit_uri: edit/master/docs/
 
 docs_dir: docs
 
-# Internal design docs (implementation plans / specs) live under docs/superpowers/,
-# and PUBLISH-CHECKLIST.md is a maintainer-only release runbook — none of this
-# is user-facing and none of it should ever be published to the hosted site.
+# Maintainer-only files (local planning notes, the release runbook) stay off the site.
 exclude_docs: |
   superpowers/
   plans/

@@ -95,23 +95,19 @@ class StreamRedactor:
         """
         buffer = self._buffer
         limit = len(buffer) - self._tail
-        # Cut points sit just after a whitespace char, latest first. `\s` is
-        # exactly str.isspace(); the C-level scan keeps whitespace-free
-        # streams cheap.
-        # The buffer only grows between cuts, so candidates already tried are
-        # not retried until new whitespace arrives past them: a stream with no
-        # usable separator costs O(n) total, not one detection pass per feed.
-        # (A tried cut that later text would make safe just waits for the next
-        # separator or flush(); output is unchanged either way.)
+        # Cut points sit just after a whitespace char (`\s` is exactly
+        # str.isspace()), latest first. Candidates already tried are retried
+        # only once new whitespace arrives past them, so a stream with no
+        # usable separator costs O(n) total rather than a detection pass per
+        # feed. Output is unchanged either way; only emission timing can lag.
         limit = max(limit, 0)
         start, self._tried_upto = self._tried_upto, limit
         if _WHITESPACE.search(buffer, start, limit) is None:
             return 0, []  # no new cut candidate: skip detection entirely
         candidates = [m.end() for m in _WHITESPACE.finditer(buffer, 0, limit)][::-1]
         full = self._redactor._detect(buffer)
-        # ponytail: ~O(tail^2 * recognizers) worst case — re-detects prefix and
-        # suffix per candidate separator; in practice the first candidate that
-        # no span straddles is accepted, so a feed costs ~3 detection passes.
+        # Worst case re-detects prefix and suffix per candidate; in practice the
+        # first candidate no span straddles is accepted (~3 detection passes).
         for c in candidates:
             if any(s.start < c < s.end for s in full):
                 continue  # a span straddles this cut

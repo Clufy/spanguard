@@ -10,8 +10,6 @@ from spanguard.result import Span
 from .base import Recognizer
 from .luhn import luhn_valid
 
-# --- patterns -------------------------------------------------------------
-
 # Email: Unicode local part and domain labels; a single @ and a dotted TLD of
 # >= 2 Unicode LETTERS (`[^\W\d_]`). Bracket/quote/comma/semicolon/colon chars
 # are excluded from the local+domain classes so the match neither gloms onto
