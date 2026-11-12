@@ -70,6 +70,21 @@ statistical NER, it can miss unusual names/locations or misclassify
 ambiguous tokens, and its precision/recall differs by domain and language
 from the model's training data.
 
+Listing `PERSON` or `LOCATION` in `Policy.entities` does **not** enable NER on
+its own: the default recognizer set only covers the regex/checksum types. A
+`Redactor` built from a policy that names an entity with no built-in
+recognizer emits a `UserWarning` naming the undetected types (labels only,
+never text), so a typo like `"EMIAL"` or a forgotten `SpacyRecognizer` cannot
+silently redact nothing. Pass the recognizers explicitly instead:
+
+```python
+from spanguard import Policy, Redactor
+from spanguard.recognizers import DEFAULT_RECOGNIZERS, SpacyRecognizer
+
+recognizers = [*DEFAULT_RECOGNIZERS.values(), SpacyRecognizer()]
+redactor = Redactor(Policy(mode="placeholder"), recognizers=recognizers)
+```
+
 ## The ephemeral-key warning
 
 !!! warning "Set an explicit key in production"

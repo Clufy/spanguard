@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import warnings
+
 from spanguard._keys import resolve_key
 from spanguard._overlap import resolve_overlaps
 from spanguard._transform import apply_spans
@@ -25,6 +27,15 @@ class Redactor:
     ) -> None:
         self.policy = policy
         if recognizers is None:
+            missing = [e for e in policy.entities if e not in DEFAULT_RECOGNIZERS]
+            if missing:
+                # Labels only (never text), so this cannot leak raw values.
+                warnings.warn(
+                    f"Policy entities with no built-in recognizer are not detected: "
+                    f"{', '.join(missing)}. Pass recognizers=[...] (e.g. SpacyRecognizer "
+                    f"for PERSON/LOCATION) to detect them.",
+                    stacklevel=2,
+                )
             recognizers = [
                 DEFAULT_RECOGNIZERS[e]
                 for e in policy.entities

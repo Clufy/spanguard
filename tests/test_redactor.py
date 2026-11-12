@@ -72,3 +72,33 @@ def test_custom_recognizer_plugs_in() -> None:
     assert res.text == "zip [ZIP] end"
     assert res.audit is not None
     assert res.audit.counts == {"ZIP": 1}
+
+
+def test_unknown_policy_entity_warns() -> None:
+    import pytest
+
+    with pytest.warns(UserWarning, match=r"PERSON.*recognizers=") as rec:
+        Redactor(Policy(entities=("EMAIL", "PERSON")))
+    assert len(rec) == 1
+
+
+def test_custom_recognizers_do_not_warn() -> None:
+    import warnings
+
+    class Zip:
+        entity_type = "ZIP"
+
+        def recognize(self, text: str) -> list[Span]:
+            return []
+
+    with warnings.catch_warnings():
+        warnings.simplefilter("error")
+        Redactor(Policy(entities=("ZIP", "PERSON")), recognizers=[Zip()])
+
+
+def test_default_policy_does_not_warn() -> None:
+    import warnings
+
+    with warnings.catch_warnings():
+        warnings.simplefilter("error")
+        Redactor(Policy())
