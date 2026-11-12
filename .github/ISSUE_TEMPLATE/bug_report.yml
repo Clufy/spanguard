@@ -31,7 +31,7 @@ body:
     attributes:
       label: spanguard version
       description: Output of `pip show spanguard` (or `uv pip show spanguard`), or the git commit if installed from source.
-      placeholder: "0.1.0"
+      placeholder: "0.1.1"
     validations:
       required: true
 

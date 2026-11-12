@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "spanguard"
-version = "0.1.0"
+version = "0.1.1"
 description = "Detect and redact PII/PHI in text and streaming transcripts, with leak-free audit records."
 readme = "README.md"
 requires-python = ">=3.12"

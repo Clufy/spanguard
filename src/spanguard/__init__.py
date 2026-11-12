@@ -7,7 +7,7 @@ from spanguard.result import AuditRecord, RedactionResult, Span
 from spanguard.streaming import StreamBufferFullError, StreamRedactor
 from spanguard.tokenize import Keyring
 
-__version__ = "0.1.0"
+__version__ = "0.1.1"
 __all__ = [
     "AuditRecord",
     "Keyring",

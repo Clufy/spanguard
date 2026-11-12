@@ -11,8 +11,8 @@ authors:
 repository-code: "https://github.com/Clufy/spanguard"
 url: "https://clufy.github.io/spanguard"
 license: MIT
-version: 0.1.0
-date-released: "2026-07-06"
+version: 0.1.1
+date-released: "2026-11-12"
 keywords:
   - pii
   - phi

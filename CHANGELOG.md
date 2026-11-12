@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.1] - 2026-11-12
+
+### Fixed
+
+- Install instructions quote the extra (`pip install "spanguard[ner]"`), so
+  the command also works in zsh, the default macOS shell, where the unquoted
+  form fails with "no matches found". No code changes.
+
 ## [0.1.0] - 2026-11-12
 
 Initial release.
@@ -86,5 +94,6 @@ quadratically on long whitespace-free runs (a denial-of-service vector),
 `Keyring.reveal` is linear in the text, and `StreamRedactor` never re-detects
 text it has already verified or split points it has already tried.
 
-[unreleased]: https://github.com/Clufy/spanguard/compare/v0.1.0...HEAD
+[unreleased]: https://github.com/Clufy/spanguard/compare/v0.1.1...HEAD
+[0.1.1]: https://github.com/Clufy/spanguard/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/Clufy/spanguard/releases/tag/v0.1.0
