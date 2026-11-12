@@ -50,7 +50,7 @@ installed by a plain `pip install spanguard`. To use it you need:
 === "pip"
 
     ```bash
-    pip install spanguard[ner]
+    pip install "spanguard[ner]"
     python -m spacy download en_core_web_sm
     ```
 

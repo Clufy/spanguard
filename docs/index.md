@@ -107,7 +107,7 @@ For the optional NER (`PERSON`/`LOCATION`) recognizer:
 === "pip"
 
     ```bash
-    pip install spanguard[ner]
+    pip install "spanguard[ner]"
     python -m spacy download en_core_web_sm
     ```
 
