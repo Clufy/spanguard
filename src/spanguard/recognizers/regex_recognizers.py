@@ -30,7 +30,6 @@ _EMAIL_ANCHORED = re.compile(
     re.UNICODE,
 )
 _EMAIL = re.compile(rf"(?<!{_EMAIL_LOCAL}){_EMAIL_ANCHORED.pattern}", re.UNICODE)
-_EMAIL_LOCAL_CHAR = re.compile(_EMAIL_LOCAL)
 # NANP-style: optional +country, 3-3-4 with -, ., space, or parens on area code.
 _PHONE = re.compile(
     r"(?<!\d)(?:\+\d{1,2}[ .\-]?)?(?:\(\d{3}\)|\d{3})[ .\-]\d{3}[ .\-]\d{4}(?!\d)"
@@ -92,7 +91,7 @@ class EmailRecognizer:
         while True:
             m = None
             # A previous match ended inside a run: an email may start right here.
-            if spans and pos < len(text) and _EMAIL_LOCAL_CHAR.match(text, pos):
+            if spans:
                 m = _EMAIL_ANCHORED.match(text, pos)
             if m is None:
                 m = _EMAIL.search(text, pos)

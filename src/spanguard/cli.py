@@ -10,8 +10,6 @@ from pathlib import Path
 from spanguard.policy import DEFAULT_ENTITIES, Policy
 from spanguard.redactor import Redactor
 
-_STDIN = "-"
-
 
 class _UsageError(Exception):
     """A user-facing error: printed as ``error: <msg>`` with exit code 2.
@@ -63,9 +61,9 @@ def build_parser() -> argparse.ArgumentParser:
 
 def _read_input(path: str) -> str:
     """Read `path` (or stdin for ``-``) as UTF-8, mapping failures to usage errors."""
-    label = "<stdin>" if path == _STDIN else path
+    label = "<stdin>" if path == "-" else path
     try:
-        if path == _STDIN:
+        if path == "-":
             # Decode the raw bytes ourselves: the console/pipe default (e.g.
             # cp1252 on Windows) would silently mis-decode UTF-8 input.
             buffer = getattr(sys.stdin, "buffer", None)
