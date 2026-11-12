@@ -85,6 +85,16 @@ recognizers = [*DEFAULT_RECOGNIZERS.values(), SpacyRecognizer()]
 redactor = Redactor(Policy(mode="placeholder"), recognizers=recognizers)
 ```
 
+## Streams without a safe separator are buffered in full
+
+`StreamRedactor` emits text only up to a whitespace character that no entity
+straddles. A stream with no such separator is held in memory until one
+arrives or `flush()` is called. Examples are a multi-megabyte base64 payload,
+or a stream whose only whitespace is inside a phone number. Splitting it
+anyway could leak part of an entity. Set `max_buffer` to make `feed()` raise
+`StreamBufferFullError` instead of growing without limit; see
+[Streaming](streaming.md#memory-and-max_buffer).
+
 ## The ephemeral-key warning
 
 !!! warning "Set an explicit key in production"

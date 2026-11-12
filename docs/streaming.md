@@ -67,6 +67,35 @@ gracefully: `StreamRedactor` falls back to the nearest safe word-boundary
 split rather than holding the buffer forever. In practice this means such an
 entity is still fully redacted (never leaked in pieces), but the boundary
 where redacted output is emitted may lag by up to roughly `tail` +
-one chunk's worth of characters. Memory usage is bounded by `tail` plus one
-chunk at all times — `StreamRedactor` never buffers an entire unbounded
-stream.
+one chunk's worth of characters.
+
+## Memory and `max_buffer`
+
+Output is emitted only up to a whitespace character that no entity
+straddles. While the stream keeps supplying such separators, as ordinary
+prose and transcripts do, the buffer stays near `tail` plus one chunk.
+
+A stream that never supplies one is held in full until it does, or until
+you call `flush()`. Examples are a long base64 blob, or text whose only
+whitespace sits inside a phone number. Cutting such a stream anyway could
+emit half of an email address unredacted, so spanguard never does it on its
+own.
+
+To cap memory, pass `max_buffer`. When a `feed()` leaves more than
+`max_buffer` characters held and nothing could be emitted, it raises
+`StreamBufferFullError`. The message gives sizes only, never content:
+
+```python
+from spanguard import Policy, Redactor, StreamBufferFullError, StreamRedactor
+
+stream = StreamRedactor(Redactor(Policy(mode="placeholder")), max_buffer=1_000_000)
+try:
+    out = stream.feed(chunk)
+except StreamBufferFullError:
+    # Nothing was dropped. Either emit what is held (an entity still
+    # arriving may then be split at this point) or abandon the stream.
+    out = stream.flush()
+```
+
+`max_buffer` must be greater than `tail`. It defaults to `None` (no cap), so
+existing callers behave as before.

@@ -19,6 +19,7 @@ differential test against the previous algorithm.
 | `Keyring.reveal`, 30k issued tokens | 11.2 s | 44 ms |
 | `StreamRedactor`, 200 KB in 4 KB chunks | 304 ms | 194 ms |
 | `StreamRedactor`, 1 MB with no whitespace | quadratic | linear |
+| `StreamRedactor`, 200 KB whose only whitespace is inside a phone number | 8.49 s | 0.08 s |
 | `benchmarks/throughput.py` (1 MB corpus) | 1.54 MB/s | 2.15 MB/s |
 
 - Overlap resolution is O(n log n) (bisect over chosen spans) instead of O(n²).
@@ -28,12 +29,17 @@ differential test against the previous algorithm.
 - `Keyring.reveal` scans bracket-delimited tokens once and looks them up,
   instead of rebuilding an alternation of every issued token per call.
 - `StreamRedactor` reuses its verified prefix spans when emitting, skips
-  detection when no cut point exists, and never rescans a known
-  whitespace-free prefix.
+  detection when no cut point exists, and never retries cut points that
+  already failed, so a stream whose only whitespace sits inside an entity
+  (for example `(555) 123 4567-` followed by a blob) is linear, not
+  quadratic.
 
 ### Added
 
 - CLI: `-` as the input path reads stdin (decoded as UTF-8).
+- `StreamRedactor(max_buffer=N)` and `StreamBufferFullError`: an opt-in cap
+  on held-back text for streams that never offer a safe split point. The
+  default stays uncapped.
 - `Redactor` warns (`UserWarning`, entity labels only) when `Policy.entities`
   names a type with no built-in recognizer, such as `PERSON` without
   `SpacyRecognizer` or a typo like `EMIAL`, instead of silently detecting
@@ -45,6 +51,13 @@ differential test against the previous algorithm.
   types, instead of being silently skipped and leaving that type unredacted.
 - CLI: undecodable, unreadable, or directory inputs exit with code 2 and a
   one-line `error:` message that names only the path, instead of a traceback.
+  The same applies when stdin is closed or absent (`<&-`, `pythonw`).
+
+### Fixed
+
+- Docs: the claim that `StreamRedactor` memory is always bounded by `tail`
+  plus one chunk was wrong for streams without a safe separator. The
+  streaming page and known limitations now describe the real behavior.
 
 ## [0.1.0] - 2026-07-06
 
