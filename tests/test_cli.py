@@ -87,3 +87,67 @@ def test_help_runs() -> None:
     with pytest.raises(SystemExit) as ei:
         main(["--help"])
     assert ei.value.code == 0
+
+
+def _stdin(monkeypatch, data: bytes) -> None:  # type: ignore[no-untyped-def]
+    import io
+    import sys
+
+    monkeypatch.setattr(sys, "stdin", io.TextIOWrapper(io.BytesIO(data), encoding="cp1252"))
+
+
+def test_unknown_entity_is_a_usage_error(tmp_path, capsys) -> None:  # type: ignore[no-untyped-def]
+    path = _write(tmp_path, "mail jane@x.com")
+    rc = main(["redact", path, "--entities", "EMIAL,PHONE"])
+    captured = capsys.readouterr()
+    assert rc == 2
+    assert captured.out == ""  # nothing (unredacted or otherwise) is written
+    assert "unknown entity type(s): EMIAL" in captured.err
+    assert "CREDIT_CARD" in captured.err  # lists the valid choices
+    assert "jane@x.com" not in captured.err
+
+
+def test_non_utf8_file_errors_without_content(tmp_path, capsys) -> None:  # type: ignore[no-untyped-def]
+    p = tmp_path / "latin1.txt"
+    p.write_bytes("secret café 123-45-6789".encode("latin-1"))
+    rc = main(["scan", str(p)])
+    err = capsys.readouterr().err
+    assert rc == 2
+    assert "error: cannot decode" in err and "UTF-8" in err
+    assert "123-45-6789" not in err
+
+
+def test_directory_path_errors(tmp_path, capsys) -> None:  # type: ignore[no-untyped-def]
+    rc = main(["redact", str(tmp_path)])
+    assert rc == 2
+    assert "error: cannot read" in capsys.readouterr().err
+
+
+def test_redact_reads_stdin_as_utf8(capsys, monkeypatch) -> None:  # type: ignore[no-untyped-def]
+    _stdin(monkeypatch, "café jane@x.com\n".encode())
+    rc = main(["redact", "-", "--mode", "placeholder"])
+    assert rc == 0
+    assert capsys.readouterr().out == "café [EMAIL]\n"
+
+
+def test_scan_reads_stdin(capsys, monkeypatch) -> None:  # type: ignore[no-untyped-def]
+    _stdin(monkeypatch, b"ssn 123-45-6789")
+    rc = main(["scan", "-"])
+    assert rc == 0
+    assert capsys.readouterr().out == "SSN: 1\n"
+
+
+def test_non_utf8_stdin_errors(capsys, monkeypatch) -> None:  # type: ignore[no-untyped-def]
+    _stdin(monkeypatch, b"\xff\xfe bad")
+    rc = main(["scan", "-"])
+    assert rc == 2
+    assert "error: cannot decode <stdin>" in capsys.readouterr().err
+
+
+def test_text_only_stdin_is_supported(capsys, monkeypatch) -> None:  # type: ignore[no-untyped-def]
+    import io
+    import sys
+
+    monkeypatch.setattr(sys, "stdin", io.StringIO("ssn 123-45-6789"))  # no .buffer
+    assert main(["scan", "-"]) == 0
+    assert capsys.readouterr().out == "SSN: 1\n"

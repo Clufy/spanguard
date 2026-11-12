@@ -69,12 +69,44 @@ redacted text on stdout) with `--audit-json`:
 $ spanguard redact notes.txt --mode placeholder --audit-json > redacted.txt
 ```
 
+## Reading from stdin
+
+Pass `-` as the file to read standard input, so spanguard can sit in a
+pipeline:
+
+```console
+$ cat notes.txt | spanguard redact - --mode placeholder > redacted.txt
+$ some-transcriber --live | spanguard scan - --json
+```
+
+## Exit codes and errors
+
+| Code | Meaning |
+|---|---|
+| `0` | Success. |
+| `2` | Usage or input error, printed as `error: ...` on stderr. Nothing is written to stdout. |
+
+Error messages name the path or entity label involved and **never** echo any
+input content:
+
+```console
+$ spanguard redact notes.txt --entities EMIAL
+error: unknown entity type(s): EMIAL; choose from EMAIL, PHONE, SSN, MRN, DOB, CREDIT_CARD, API_KEY
+$ spanguard scan latin1.txt
+error: cannot decode latin1.txt as UTF-8
+$ spanguard scan missing.txt
+error: file not found: missing.txt
+```
+
+An unknown `--entities` name is an error rather than being skipped, because
+silently ignoring a typo would leave that entity type unredacted. `PERSON`
+and `LOCATION` (spaCy NER) are library-only; see
+[Recognizers](recognizers.md).
+
 ## Notes
 
-- Both commands read the input file as UTF-8.
+- Both commands read their input (file or stdin) as UTF-8.
 - `scan` always resolves an internal `placeholder` policy to compute counts;
   it never writes the redacted text anywhere.
 - The CLI forces its stdout/stderr streams to UTF-8 so `mask` mode's
   `█` mask character never crashes on a non-UTF-8 console.
-- A missing input file exits with code `2` and an `error: file not found: ...`
-  message on stderr.
