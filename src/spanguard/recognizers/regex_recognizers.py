@@ -16,10 +16,21 @@ from .luhn import luhn_valid
 # >= 2 Unicode LETTERS (`[^\W\d_]`). Bracket/quote/comma/semicolon/colon chars
 # are excluded from the local+domain classes so the match neither gloms onto
 # surrounding punctuation nor is dropped when glued to a preceding `)`/`]`.
-_EMAIL = re.compile(
-    r"[^\s@()<>\[\]{}\",;:]+@[^\s@()<>\[\]{}\",;:]+\.[^\W\d_]{2,}",
+#
+# Matching is kept linear on long whitespace-free runs (e.g. base64 blobs):
+# the local part is possessive (`++`, safe because its class excludes `@`),
+# and a search may only start at the beginning of a run of local-part chars.
+# Any match starting mid-run is dominated by one starting earlier in the same
+# run, EXCEPT right where a previous match ended mid-run -- that position is
+# tried with the anchored variant (see EmailRecognizer.recognize). Together
+# these reproduce `finditer` over the plain pattern exactly.
+_EMAIL_LOCAL = r"[^\s@()<>\[\]{}\",;:]"
+_EMAIL_ANCHORED = re.compile(
+    rf"{_EMAIL_LOCAL}++@{_EMAIL_LOCAL}+\.[^\W\d_]{{2,}}",
     re.UNICODE,
 )
+_EMAIL = re.compile(rf"(?<!{_EMAIL_LOCAL}){_EMAIL_ANCHORED.pattern}", re.UNICODE)
+_EMAIL_LOCAL_CHAR = re.compile(_EMAIL_LOCAL)
 # NANP-style: optional +country, 3-3-4 with -, ., space, or parens on area code.
 _PHONE = re.compile(
     r"(?<!\d)(?:\+\d{1,2}[ .\-]?)?(?:\(\d{3}\)|\d{3})[ .\-]\d{3}[ .\-]\d{4}(?!\d)"
@@ -70,9 +81,25 @@ class _RegexRecognizer:
         ]
 
 
-class EmailRecognizer(_RegexRecognizer):
+class EmailRecognizer:
+    """Emails, matched in linear time (see the `_EMAIL` comment)."""
+
     entity_type = "EMAIL"
-    pattern = _EMAIL
+
+    def recognize(self, text: str) -> list[Span]:
+        spans: list[Span] = []
+        pos = 0
+        while True:
+            m = None
+            # A previous match ended inside a run: an email may start right here.
+            if spans and pos < len(text) and _EMAIL_LOCAL_CHAR.match(text, pos):
+                m = _EMAIL_ANCHORED.match(text, pos)
+            if m is None:
+                m = _EMAIL.search(text, pos)
+            if m is None:
+                return spans
+            spans.append(Span(type="EMAIL", start=m.start(), end=m.end()))
+            pos = m.end()
 
 
 class PhoneRecognizer(_RegexRecognizer):

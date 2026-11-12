@@ -1,3 +1,5 @@
+import re
+
 from spanguard.recognizers.luhn import luhn_valid
 from spanguard.recognizers.regex_recognizers import (
     DEFAULT_RECOGNIZERS,
@@ -183,3 +185,41 @@ def test_default_recognizers_cover_all_types() -> None:
     assert set(DEFAULT_RECOGNIZERS) == {
         "EMAIL", "PHONE", "SSN", "MRN", "DOB", "CREDIT_CARD", "API_KEY",
     }
+
+
+# 0.1.0 email pattern, kept verbatim as a differential oracle for the
+# linear-time EmailRecognizer.
+_REFERENCE_EMAIL = re.compile(
+    r"[^\s@()<>\[\]{}\",;:]+@[^\s@()<>\[\]{}\",;:]+\.[^\W\d_]{2,}",
+    re.UNICODE,
+)
+
+
+def test_email_matches_reference_random() -> None:
+    import random
+
+    rng = random.Random(4321)
+    alphabet = "a1._@ ()[],:;é-"
+    r = EmailRecognizer()
+    for _ in range(5000):
+        s = "".join(rng.choice(alphabet) for _ in range(rng.randint(0, 40)))
+        expected = [(m.start(), m.end()) for m in _REFERENCE_EMAIL.finditer(s)]
+        assert [(sp.start, sp.end) for sp in r.recognize(s)] == expected, repr(s)
+
+
+def test_email_mid_token_continuation_matches_reference() -> None:
+    # A match can end mid-token (TLD stops at a digit); the next email starts
+    # right there, inside the same token.
+    text = "a@b.cc1x@d.ee"
+    got = [text[s.start : s.end] for s in EmailRecognizer().recognize(text)]
+    assert got == ["a@b.cc", "1x@d.ee"]
+
+
+def test_email_linear_on_long_token() -> None:
+    import time
+
+    r = EmailRecognizer()
+    for blob in ("a." * 50_000, "a" * 100_000 + "@", "x@" + "a." * 50_000):
+        t0 = time.perf_counter()
+        r.recognize(blob)
+        assert time.perf_counter() - t0 < 0.5
