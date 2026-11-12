@@ -64,6 +64,9 @@ def _read_input(path: str) -> str:
     label = "<stdin>" if path == "-" else path
     try:
         if path == "-":
+            # None under `<&-` or pythonw; a closed stream would raise ValueError.
+            if sys.stdin is None or sys.stdin.closed:
+                raise _UsageError("cannot read <stdin>: stdin is not available")
             # Decode the raw bytes ourselves: the console/pipe default (e.g.
             # cp1252 on Windows) would silently mis-decode UTF-8 input.
             buffer = getattr(sys.stdin, "buffer", None)

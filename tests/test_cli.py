@@ -161,3 +161,26 @@ def test_unwritable_out_path_errors(tmp_path, capsys) -> None:  # type: ignore[n
     assert rc == 2
     assert f"error: cannot write {bad_out}" in err
     assert "jane@x.com" not in err and "Traceback" not in err
+
+
+def test_missing_stdin_errors(capsys, monkeypatch) -> None:  # type: ignore[no-untyped-def]
+    import sys
+
+    monkeypatch.setattr(sys, "stdin", None)  # `<&-`, pythonw
+    assert main(["scan", "-"]) == 2
+    captured = capsys.readouterr()
+    assert captured.out == ""
+    assert "error: cannot read <stdin>: stdin is not available" in captured.err
+
+
+def test_closed_stdin_errors(capsys, monkeypatch) -> None:  # type: ignore[no-untyped-def]
+    import io
+    import sys
+
+    stdin = io.TextIOWrapper(io.BytesIO(b"ssn 123-45-6789"))
+    stdin.close()
+    monkeypatch.setattr(sys, "stdin", stdin)
+    assert main(["redact", "-"]) == 2
+    captured = capsys.readouterr()
+    assert captured.out == ""
+    assert "error: cannot read <stdin>: stdin is not available" in captured.err
