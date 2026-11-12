@@ -7,7 +7,44 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-Nothing yet.
+### Performance
+
+Redaction output is byte-identical to 0.1.0; each change is pinned by a
+differential test against the previous algorithm.
+
+| Path | 0.1.0 | Now |
+|---|---|---|
+| `Redactor.redact`, 40k spans | 84.6 s | 0.84 s |
+| `EmailRecognizer`, 8k-char token with no spaces | 844 ms (quadratic) | 0.6 ms (linear) |
+| `Keyring.reveal`, 30k issued tokens | 11.2 s | 44 ms |
+| `StreamRedactor`, 200 KB in 4 KB chunks | 304 ms | 194 ms |
+| `StreamRedactor`, 1 MB with no whitespace | quadratic | linear |
+| `benchmarks/throughput.py` (1 MB corpus) | 1.54 MB/s | 2.15 MB/s |
+
+- Overlap resolution is O(n log n) (bisect over chosen spans) instead of O(n²).
+- Email detection no longer backtracks quadratically on long whitespace-free
+  runs (for example base64 blobs), which made very large tokens a
+  denial-of-service vector.
+- `Keyring.reveal` scans bracket-delimited tokens once and looks them up,
+  instead of rebuilding an alternation of every issued token per call.
+- `StreamRedactor` reuses its verified prefix spans when emitting, skips
+  detection when no cut point exists, and never rescans a known
+  whitespace-free prefix.
+
+### Added
+
+- CLI: `-` as the input path reads stdin (decoded as UTF-8).
+- `Redactor` warns (`UserWarning`, entity labels only) when `Policy.entities`
+  names a type with no built-in recognizer, such as `PERSON` without
+  `SpacyRecognizer` or a typo like `EMIAL`, instead of silently detecting
+  nothing for it.
+
+### Changed
+
+- CLI: an unknown `--entities` name now exits with code 2 and lists the valid
+  types, instead of being silently skipped and leaving that type unredacted.
+- CLI: undecodable, unreadable, or directory inputs exit with code 2 and a
+  one-line `error:` message that names only the path, instead of a traceback.
 
 ## [0.1.0] - 2026-07-06
 
