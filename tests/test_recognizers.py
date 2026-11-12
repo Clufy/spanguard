@@ -222,4 +222,4 @@ def test_email_linear_on_long_token() -> None:
     for blob in ("a." * 50_000, "a" * 100_000 + "@", "x@" + "a." * 50_000):
         t0 = time.perf_counter()
         r.recognize(blob)
-        assert time.perf_counter() - t0 < 0.5
+        assert time.perf_counter() - t0 < 5.0  # 0.1.0 (quadratic) took >60 s

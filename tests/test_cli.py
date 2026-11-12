@@ -151,3 +151,13 @@ def test_text_only_stdin_is_supported(capsys, monkeypatch) -> None:  # type: ign
     monkeypatch.setattr(sys, "stdin", io.StringIO("ssn 123-45-6789"))  # no .buffer
     assert main(["scan", "-"]) == 0
     assert capsys.readouterr().out == "SSN: 1\n"
+
+
+def test_unwritable_out_path_errors(tmp_path, capsys) -> None:  # type: ignore[no-untyped-def]
+    path = _write(tmp_path, "mail jane@x.com")
+    bad_out = tmp_path / "no_such_dir" / "o.txt"
+    rc = main(["redact", path, "--out", str(bad_out)])
+    err = capsys.readouterr().err
+    assert rc == 2
+    assert f"error: cannot write {bad_out}" in err
+    assert "jane@x.com" not in err and "Traceback" not in err

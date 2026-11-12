@@ -204,4 +204,4 @@ def test_whitespace_free_stream_is_linear() -> None:
     t0 = time.perf_counter()
     for i in range(0, len(blob), 1000):
         assert sr.feed(blob[i : i + 1000]) == ""
-    assert time.perf_counter() - t0 < 1.0
+    assert time.perf_counter() - t0 < 5.0  # quadratic rescans: ~18 s

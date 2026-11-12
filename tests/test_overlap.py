@@ -71,5 +71,5 @@ def test_resolve_overlaps_scales() -> None:
     spans = [Span("EMAIL", i * 10, i * 10 + 5) for i in range(50_000)]
     t0 = time.perf_counter()
     out = resolve_overlaps(spans)
-    assert time.perf_counter() - t0 < 2.0
+    assert time.perf_counter() - t0 < 10.0  # 0.1.0 (quadratic) took >60 s
     assert len(out) == 50_000

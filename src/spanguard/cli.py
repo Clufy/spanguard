@@ -104,7 +104,12 @@ def _cmd_redact(args: argparse.Namespace) -> int:
     text = _read_input(args.file)
     result = Redactor(policy).redact(text)
     if args.out:
-        Path(args.out).write_text(result.text, encoding="utf-8")
+        try:
+            Path(args.out).write_text(result.text, encoding="utf-8")
+        except OSError as exc:
+            raise _UsageError(
+                f"cannot write {args.out}: {exc.strerror or type(exc).__name__}"
+            ) from None
     else:
         sys.stdout.write(result.text)
         if not result.text.endswith("\n"):
