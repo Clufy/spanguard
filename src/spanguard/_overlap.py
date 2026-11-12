@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from bisect import bisect_left
+
 from spanguard.result import Span
 
 PRIORITY: dict[str, int] = {
@@ -31,11 +33,21 @@ def resolve_overlaps(spans: list[Span]) -> list[Span]:
     transitive: a span that overlaps only an already-rejected span is still
     kept. Returns the surviving spans sorted by start.
     """
-    if not spans:
-        return []
+    # Index the chosen non-empty spans as parallel start/end lists sorted by
+    # start. They are pairwise disjoint, so their ends are sorted too, and a
+    # candidate [s, e) overlaps one of them iff the last one starting before e
+    # ends after s: one bisect per span, O(n log n) instead of O(n^2).
+    # Empty spans rank last (shortest) and can only be followed by other empty
+    # spans, which they never overlap, so they are never indexed.
+    starts: list[int] = []
+    ends: list[int] = []
     chosen: list[Span] = []
     for span in sorted(spans, key=_rank):
-        if any(span.start < c.end and c.start < span.end for c in chosen):
+        i = bisect_left(starts, span.end)
+        if i and ends[i - 1] > span.start:
             continue  # overlaps an already-chosen (better) span
         chosen.append(span)
+        if span.end > span.start:
+            starts.insert(i, span.start)
+            ends.insert(i, span.end)
     return sorted(chosen, key=lambda s: s.start)

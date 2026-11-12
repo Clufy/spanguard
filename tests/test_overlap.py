@@ -38,3 +38,38 @@ def test_chain_of_overlaps_keeps_non_overlapping_survivors() -> None:
 
 def test_empty() -> None:
     assert resolve_overlaps([]) == []
+
+
+def _reference_resolve(spans: list[Span]) -> list[Span]:
+    """The 0.1.0 quadratic algorithm, kept verbatim as a differential oracle."""
+    from spanguard._overlap import _rank
+
+    chosen: list[Span] = []
+    for span in sorted(spans, key=_rank):
+        if any(span.start < c.end and c.start < span.end for c in chosen):
+            continue
+        chosen.append(span)
+    return sorted(chosen, key=lambda s: s.start)
+
+
+def test_resolve_overlaps_matches_reference_random() -> None:
+    import random
+
+    rng = random.Random(1234)
+    types = ["SSN", "CREDIT_CARD", "API_KEY", "EMAIL", "PHONE", "MRN", "DOB", "PERSON", "ZIP"]
+    for _ in range(2000):
+        spans = []
+        for _ in range(rng.randint(0, 60)):
+            start = rng.randint(0, 80)
+            spans.append(Span(rng.choice(types), start, start + rng.randint(0, 15)))
+        assert resolve_overlaps(spans) == _reference_resolve(spans)
+
+
+def test_resolve_overlaps_scales() -> None:
+    import time
+
+    spans = [Span("EMAIL", i * 10, i * 10 + 5) for i in range(50_000)]
+    t0 = time.perf_counter()
+    out = resolve_overlaps(spans)
+    assert time.perf_counter() - t0 < 2.0
+    assert len(out) == 50_000
