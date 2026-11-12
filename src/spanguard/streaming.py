@@ -16,9 +16,10 @@ class StreamBufferFullError(Exception):
     """Raised by ``StreamRedactor.feed`` when the held-back buffer exceeds
     ``max_buffer`` and no point to emit up to is safe yet.
 
-    The buffer is kept intact: call ``flush()`` to redact and emit everything
-    held so far (an entity still arriving may then be split), or discard the
-    redactor.
+    The chunk passed to that ``feed()`` has already been accepted, so do not
+    feed it again. The buffer is kept intact: call ``flush()`` to redact and
+    emit everything held so far (an entity still arriving may then be split),
+    or discard the redactor.
     """
 
 
@@ -34,8 +35,10 @@ class StreamRedactor:
     straddles, so while the stream keeps supplying such separators the buffer
     stays near ``tail`` plus one chunk. A stream without one (a long base64
     blob, or whitespace only inside a phone number) is held until one arrives
-    or ``flush()`` is called. Pass ``max_buffer`` to cap that: ``feed()`` then
-    raises ``StreamBufferFullError`` instead of growing past it.
+    or ``flush()`` is called. Pass ``max_buffer`` to cap that: a ``feed()``
+    that leaves more than ``max_buffer`` characters held and can emit nothing
+    raises ``StreamBufferFullError``. (A feed that does emit may still leave
+    the buffer over the cap; the next feed that cannot emit raises.)
 
     ``tail`` must be >= ``_MIN_TAIL`` (64),
     which is enforced. An entity longer than ``tail`` with no internal
@@ -125,12 +128,17 @@ class StreamRedactor:
     def feed(self, chunk: str) -> str:
         self._buffer += chunk
         cut, spans = self._safe_cut()
-        if cut == 0:
-            if self._max_buffer is not None and len(self._buffer) > self._max_buffer:
+        if cut == 0 and self._max_buffer is not None and len(self._buffer) > self._max_buffer:
+            # A skipped (already-tried) cut may have become safe since; retry
+            # every candidate before reporting that none exists.
+            self._tried_upto = 0
+            cut, spans = self._safe_cut()
+            if cut == 0:
                 raise StreamBufferFullError(
                     f"stream buffer holds {len(self._buffer)} characters, over "
                     f"max_buffer={self._max_buffer}, with no safe point to emit up to"
                 )
+        if cut == 0:
             return ""
         emit_src = self._buffer[:cut]
         self._buffer = self._buffer[cut:]

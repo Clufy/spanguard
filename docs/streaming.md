@@ -92,10 +92,14 @@ stream = StreamRedactor(Redactor(Policy(mode="placeholder")), max_buffer=1_000_0
 try:
     out = stream.feed(chunk)
 except StreamBufferFullError:
-    # Nothing was dropped. Either emit what is held (an entity still
-    # arriving may then be split at this point) or abandon the stream.
+    # Nothing was dropped, and `chunk` was already accepted: do not feed it
+    # again. Either emit what is held (an entity still arriving may then be
+    # split at this point) or abandon the stream.
     out = stream.flush()
 ```
+
+A `feed()` that does emit something never raises, even if what it leaves
+held is still over the cap; the next `feed()` that cannot emit raises.
 
 `max_buffer` must be greater than `tail`. It defaults to `None` (no cap), so
 existing callers behave as before.

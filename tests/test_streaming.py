@@ -251,3 +251,14 @@ def test_max_buffer_not_hit_when_cuts_are_possible() -> None:
 def test_max_buffer_must_exceed_tail() -> None:
     with pytest.raises(ValueError, match="max_buffer"):
         StreamRedactor(Redactor(Policy()), tail=128, max_buffer=128)
+
+
+def test_max_buffer_retries_skipped_cuts_before_raising() -> None:
+    # The cut after "MRN " fails at first (the suffix loses the MRN context)
+    # and only becomes safe once the email swallows the MRN span. Skipping
+    # already-tried cuts must not turn that into a spurious overflow error.
+    r = Redactor(Policy(mode="placeholder"))
+    text = "note MRN 1234567-" + "QUJD" * 20 + "jane@x.com" + "QUJD" * 40
+    sr = StreamRedactor(r, tail=64, max_buffer=258)
+    out = "".join(sr.feed(text[i : i + 5]) for i in range(0, len(text), 5))
+    assert out + sr.flush() == r.redact(text).text

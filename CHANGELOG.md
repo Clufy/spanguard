@@ -29,8 +29,8 @@ differential test against the previous algorithm.
 - `Keyring.reveal` scans bracket-delimited tokens once and looks them up,
   instead of rebuilding an alternation of every issued token per call.
 - `StreamRedactor` reuses its verified prefix spans when emitting, skips
-  detection when no cut point exists, and never retries cut points that
-  already failed, so a stream whose only whitespace sits inside an entity
+  detection when no cut point exists, and retries cut points that already
+  failed only once new whitespace arrives past them, so a stream whose only whitespace sits inside an entity
   (for example `(555) 123 4567-` followed by a blob) is linear, not
   quadratic.
 
