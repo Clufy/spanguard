@@ -104,10 +104,9 @@ class StreamRedactor:
         # (A tried cut that later text would make safe just waits for the next
         # separator or flush(); output is unchanged either way.)
         limit = max(limit, 0)
-        if _WHITESPACE.search(buffer, self._tried_upto, limit) is None:
-            self._tried_upto = limit
+        start, self._tried_upto = self._tried_upto, limit
+        if _WHITESPACE.search(buffer, start, limit) is None:
             return 0, []  # no new cut candidate: skip detection entirely
-        self._tried_upto = limit
         candidates = [m.end() for m in _WHITESPACE.finditer(buffer, 0, limit)][::-1]
         full = self._redactor._detect(buffer)
         # ponytail: ~O(tail^2 * recognizers) worst case — re-detects prefix and
