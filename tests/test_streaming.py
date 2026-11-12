@@ -1,9 +1,11 @@
 import random
 
+import pytest
+
 from spanguard.policy import Policy
 from spanguard.redactor import Redactor
 from spanguard.result import Span
-from spanguard.streaming import StreamRedactor
+from spanguard.streaming import StreamBufferFullError, StreamRedactor
 
 
 def _stream(text: str, chunks: list[int], policy: Policy, **keys: bytes) -> str:
@@ -205,3 +207,47 @@ def test_whitespace_free_stream_is_linear() -> None:
     for i in range(0, len(blob), 1000):
         assert sr.feed(blob[i : i + 1000]) == ""
     assert time.perf_counter() - t0 < 5.0  # quadratic rescans: ~18 s
+
+
+def test_whitespace_only_inside_entity_is_not_rescanned() -> None:
+    from spanguard.recognizers.regex_recognizers import PhoneRecognizer
+
+    rec = _CountingRecognizer()
+    r = Redactor(Policy(mode="placeholder"), recognizers=[PhoneRecognizer(), rec])
+    sr = StreamRedactor(r)
+    # The only whitespace sits inside the phone span, so no cut is ever safe.
+    text = "(555) 123 4567-" + "QUJD" * 5000
+    out = "".join(sr.feed(text[i : i + 100]) for i in range(0, len(text), 100))
+    assert rec.calls == 1  # the failed cut points are tried once, not per feed
+    assert out + sr.flush() == r.redact(text).text
+
+
+def test_tried_cuts_are_retried_when_new_whitespace_arrives() -> None:
+    r = Redactor(Policy(mode="placeholder"))
+    sr = StreamRedactor(r)
+    text = "(555) 123 4567-" + "QUJD" * 100 + " mail jane@x.com " + "word " * 100
+    out = "".join(sr.feed(text[i : i + 50]) for i in range(0, len(text), 50))
+    assert out != ""  # new whitespace outside the entity unblocks emission
+    assert out + sr.flush() == r.redact(text).text
+
+
+def test_max_buffer_raises_when_no_safe_cut() -> None:
+    sr = StreamRedactor(Redactor(Policy(mode="placeholder")), max_buffer=1000)
+    assert sr.feed("-" * 900) == ""  # not an entity, no whitespace
+    with pytest.raises(StreamBufferFullError, match="max_buffer=1000"):
+        sr.feed("=" * 200)
+    assert sr.pending == 1100  # nothing is dropped; the caller decides
+    assert sr.flush() == "-" * 900 + "=" * 200
+
+
+def test_max_buffer_not_hit_when_cuts_are_possible() -> None:
+    r = Redactor(Policy(mode="placeholder"))
+    sr = StreamRedactor(r, max_buffer=400)
+    text = "mail jane@x.com or call 555-123-4567 today. " * 200
+    out = "".join(sr.feed(text[i : i + 100]) for i in range(0, len(text), 100))
+    assert out + sr.flush() == r.redact(text).text
+
+
+def test_max_buffer_must_exceed_tail() -> None:
+    with pytest.raises(ValueError, match="max_buffer"):
+        StreamRedactor(Redactor(Policy()), tail=128, max_buffer=128)

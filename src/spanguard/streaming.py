@@ -12,14 +12,32 @@ _MIN_TAIL = 64
 _WHITESPACE = re.compile(r"\s")
 
 
+class StreamBufferFullError(Exception):
+    """Raised by ``StreamRedactor.feed`` when the held-back buffer exceeds
+    ``max_buffer`` and no point to emit up to is safe yet.
+
+    The buffer is kept intact: call ``flush()`` to redact and emit everything
+    held so far (an entity still arriving may then be split), or discard the
+    redactor.
+    """
+
+
 class StreamRedactor:
     """Redact a text arriving in chunks, holding back a tail so an entity split
     across a boundary is still redacted as one.
 
     Guarantee: for any chunking, the concatenation of all ``feed()`` outputs
     plus ``flush()`` equals ``redactor.redact(full_text).text`` -- for every
-    mode (mask, placeholder, hash, tokenize) with the same keys. Memory is
-    bounded by ``tail`` plus one chunk. ``tail`` must be >= ``_MIN_TAIL`` (64),
+    mode (mask, placeholder, hash, tokenize) with the same keys.
+
+    Memory: text is emitted only up to a whitespace character that no entity
+    straddles, so while the stream keeps supplying such separators the buffer
+    stays near ``tail`` plus one chunk. A stream without one (a long base64
+    blob, or whitespace only inside a phone number) is held until one arrives
+    or ``flush()`` is called. Pass ``max_buffer`` to cap that: ``feed()`` then
+    raises ``StreamBufferFullError`` instead of growing past it.
+
+    ``tail`` must be >= ``_MIN_TAIL`` (64),
     which is enforced. An entity longer than ``tail`` with no internal
     separators (e.g. an email or an API key) degrades gracefully to a
     word-boundary split. The floor exists specifically to prevent a
@@ -29,17 +47,29 @@ class StreamRedactor:
     safe and the raw value streams out unmasked in pieces.
     """
 
-    def __init__(self, redactor: Redactor, tail: int = _DEFAULT_TAIL) -> None:
+    def __init__(
+        self,
+        redactor: Redactor,
+        tail: int = _DEFAULT_TAIL,
+        max_buffer: int | None = None,
+    ) -> None:
         if tail < _MIN_TAIL:
             raise ValueError(
                 f"tail must be >= {_MIN_TAIL} to guarantee no raw value leaks; "
                 f"a smaller tail can let a multi-token entity (e.g. a credit card) "
                 f"stream out in sub-threshold pieces that never match. Got tail={tail}."
             )
+        if max_buffer is not None and max_buffer <= tail:
+            raise ValueError(
+                f"max_buffer must be greater than tail ({tail}); got max_buffer={max_buffer}."
+            )
         self._redactor = redactor
         self._tail = tail
+        self._max_buffer = max_buffer
         self._buffer = ""
-        self._ws_free_upto = 0  # buffer[:_ws_free_upto] has no whitespace
+        # Cut candidates in buffer[:_tried_upto] were already tried and none
+        # was safe; only whitespace past it warrants another detection pass.
+        self._tried_upto = 0
 
     @property
     def pending(self) -> int:
@@ -65,12 +95,16 @@ class StreamRedactor:
         # Cut points sit just after a whitespace char, latest first. `\s` is
         # exactly str.isspace(); the C-level scan keeps whitespace-free
         # streams cheap.
-        # The buffer only grows between cuts, so the known whitespace-free
-        # prefix is never rescanned: a separator-free stream costs O(n) total.
+        # The buffer only grows between cuts, so candidates already tried are
+        # not retried until new whitespace arrives past them: a stream with no
+        # usable separator costs O(n) total, not one detection pass per feed.
+        # (A tried cut that later text would make safe just waits for the next
+        # separator or flush(); output is unchanged either way.)
         limit = max(limit, 0)
-        if _WHITESPACE.search(buffer, self._ws_free_upto, limit) is None:
-            self._ws_free_upto = limit
-            return 0, []  # no cut candidate: skip detection entirely
+        if _WHITESPACE.search(buffer, self._tried_upto, limit) is None:
+            self._tried_upto = limit
+            return 0, []  # no new cut candidate: skip detection entirely
+        self._tried_upto = limit
         candidates = [m.end() for m in _WHITESPACE.finditer(buffer, 0, limit)][::-1]
         full = self._redactor._detect(buffer)
         # ponytail: ~O(tail^2 * recognizers) worst case — re-detects prefix and
@@ -92,10 +126,15 @@ class StreamRedactor:
         self._buffer += chunk
         cut, spans = self._safe_cut()
         if cut == 0:
+            if self._max_buffer is not None and len(self._buffer) > self._max_buffer:
+                raise StreamBufferFullError(
+                    f"stream buffer holds {len(self._buffer)} characters, over "
+                    f"max_buffer={self._max_buffer}, with no safe point to emit up to"
+                )
             return ""
         emit_src = self._buffer[:cut]
         self._buffer = self._buffer[cut:]
-        self._ws_free_upto = 0
+        self._tried_upto = 0
         return self._redactor._redact_with_spans(emit_src, spans).text
 
     def flush(self) -> str:
@@ -103,5 +142,5 @@ class StreamRedactor:
             return ""
         out = self._redactor.redact(self._buffer).text
         self._buffer = ""
-        self._ws_free_upto = 0
+        self._tried_upto = 0
         return out
