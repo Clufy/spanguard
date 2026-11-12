@@ -35,8 +35,8 @@ leaks out.
 
     ---
 
-    `mask`, `placeholder`, `hash`, and reversible `tokenize` — pick per
-    `Policy`, mix per entity type.
+    `mask`, `placeholder`, `hash`, and reversible `tokenize` — one mode
+    per `Policy`.
 
     [:octicons-arrow-right-24: Quickstart](quickstart.md)
 
@@ -45,7 +45,7 @@ leaks out.
     ---
 
     Regex/checksum recognizers for `EMAIL`, `PHONE`, `SSN`, `MRN`, `DOB`,
-    `CREDIT_CARD` (Luhn-validated), and `API_KEY` — plus an optional spaCy
+    `CREDIT_CARD` (Luhn-validated), and `API_KEY` — plus an opt-in spaCy
     NER recognizer for `PERSON`/`LOCATION`.
 
     [:octicons-arrow-right-24: Recognizers](recognizers.md)
@@ -121,8 +121,8 @@ For the optional NER (`PERSON`/`LOCATION`) recognizer:
 ## What it detects out of the box
 
 Built-in regex/checksum recognizers cover `EMAIL`, `PHONE`, `SSN`, `MRN`,
-`DOB`, `CREDIT_CARD` (Luhn-validated), and `API_KEY`. An optional spaCy-based
-recognizer adds `PERSON`/`LOCATION` detection. See [Recognizers](recognizers.md)
+`DOB`, `CREDIT_CARD` (Luhn-validated), and `API_KEY`. An opt-in spaCy-based
+recognizer adds `PERSON`/`LOCATION` detection when you pass it to `Redactor`. See [Recognizers](recognizers.md)
 for the full entity table and how to plug in your own detector.
 
 ## Where to go next

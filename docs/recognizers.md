@@ -15,11 +15,25 @@ instead of) the built-ins.
 | `DOB`         | regex                              | `mm/dd/yyyy` (1- or 2-digit month/day) or ISO `yyyy-mm-dd`.         |
 | `CREDIT_CARD` | regex + Luhn checksum              | Contiguous 13-19 digits, or standard printed groupings; Luhn-validated. |
 | `API_KEY`     | regex                              | Known prefixes (`sk-`, `AKIA`, `ghp_`) or a long high-entropy alnum run. |
-| `PERSON`, `LOCATION` | spaCy NER (optional `[ner]` extra) | Requires `pip install spanguard[ner]` and a downloaded spaCy model. |
+| `PERSON`, `LOCATION` | spaCy NER (optional `[ner]` extra) | Requires the `[ner]` extra, a spaCy model, and passing `SpacyRecognizer()` (below). |
 
-`Policy.entities` selects which of these run by default. Passing your own
-`recognizers=[...]` to `Redactor` replaces entity-based auto-selection
-entirely — you get exactly the recognizers you list.
+`Policy.entities` selects which of the regex/checksum recognizers run by
+default. Passing your own `recognizers=[...]` to `Redactor` replaces
+entity-based auto-selection entirely — you get exactly the recognizers you
+list.
+
+`PERSON` and `LOCATION` are never run by default, even with the `[ner]`
+extra installed. Add the spaCy recognizer next to the built-ins:
+
+```python
+from spanguard import Policy, Redactor
+from spanguard.recognizers import DEFAULT_RECOGNIZERS, SpacyRecognizer
+
+redactor = Redactor(Policy(), recognizers=[*DEFAULT_RECOGNIZERS.values(), SpacyRecognizer()])
+```
+
+If `Policy.entities` names a type no recognizer covers, `Redactor` emits a
+`UserWarning` naming it, rather than silently detecting nothing.
 
 ## The `entity_type`-is-a-label contract
 

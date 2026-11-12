@@ -1,7 +1,7 @@
 # API reference
 
 This page is generated directly from the docstrings in `spanguard`'s source,
-so it never drifts out of sync with the code. All eight names below are
+so it never drifts out of sync with the code. All nine names below are
 importable straight from the top-level package:
 
 ```python
@@ -14,6 +14,7 @@ from spanguard import (
     Recognizer,
     Keyring,
     StreamRedactor,
+    StreamBufferFullError,
 )
 ```
 
@@ -71,3 +72,7 @@ split-equals-one-shot guarantee.
 ### `StreamRedactor`
 
 ::: spanguard.StreamRedactor
+
+### `StreamBufferFullError`
+
+::: spanguard.StreamBufferFullError

@@ -8,7 +8,7 @@
 [![Docs](https://img.shields.io/badge/docs-mkdocs--material-blue.svg)](https://clufy.github.io/spanguard)
 [![Python](https://img.shields.io/badge/python-3.12%2B-blue.svg)](https://www.python.org/downloads/)
 [![Typed](https://img.shields.io/badge/mypy-strict-blue.svg)](https://mypy-lang.org/)
-[![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
+[![License](https://img.shields.io/badge/license-MIT-green.svg)](https://github.com/Clufy/spanguard/blob/master/LICENSE)
 
 spanguard detects and redacts PII/PHI (personally identifiable information and
 protected health information) in text and streaming transcripts. Every
@@ -50,7 +50,7 @@ not just documented.
   straddles a chunk boundary.
 - **Pluggable recognizers** — register a custom `Recognizer` for domain-specific
   entities without forking the library.
-- **Typed and tested** — mypy `--strict` and ruff clean, 97 tests, 96.92%
+- **Typed and tested** — mypy `--strict` and ruff clean, 128 tests, 97.9%
   coverage.
 - **CLI included** — `spanguard scan` / `spanguard redact` for one-off files
   and shell pipelines.
@@ -66,6 +66,15 @@ For the optional NER (`PERSON`/`LOCATION`) recognizer:
 ```bash
 pip install spanguard[ner]
 python -m spacy download en_core_web_sm
+```
+
+NER is opt-in per `Redactor`: pass the recognizer alongside the built-ins.
+
+```python
+from spanguard import Policy, Redactor
+from spanguard.recognizers import DEFAULT_RECOGNIZERS, SpacyRecognizer
+
+redactor = Redactor(Policy(), recognizers=[*DEFAULT_RECOGNIZERS.values(), SpacyRecognizer()])
 ```
 
 ## 60-second quickstart
@@ -128,16 +137,26 @@ entity split across a chunk boundary is still detected as one; the
 concatenation of every `feed()` plus the final `flush()` is guaranteed to
 equal a one-shot `redactor.redact(full_text).text`.
 
+Text is emitted only up to a safe split point (whitespace outside any
+entity), so a stream with none, such as a long base64 blob, is held in memory.
+Pass `StreamRedactor(redactor, max_buffer=N)` to get a `StreamBufferFullError`
+instead of unbounded growth. See
+[Streaming](https://clufy.github.io/spanguard/streaming/).
+
 ## CLI
 
 ```bash
 spanguard scan file.txt
 spanguard redact file.txt --mode mask
 spanguard redact file.txt --mode tokenize --out redacted.txt
+cat file.txt | spanguard redact - --mode placeholder   # '-' reads stdin
 ```
 
 `scan` reports entity-type counts only (no raw values); `redact` writes the
-redacted text and, with `--audit-json`, the audit record to stderr.
+redacted text and, with `--audit-json`, the audit record to stderr. Bad input
+(an unknown `--entities` name, a missing or non-UTF-8 file) exits with code 2
+and a one-line `error:` message that never echoes input content. See
+[CLI](https://clufy.github.io/spanguard/cli/).
 
 ## Built-in entity table
 
@@ -150,7 +169,7 @@ redacted text and, with `--audit-json`, the audit record to stderr.
 | `DOB`         | regex                              | `mm/dd/yyyy` (1- or 2-digit month/day) or ISO `yyyy-mm-dd`.         |
 | `CREDIT_CARD` | regex + Luhn checksum              | Contiguous 13-19 digits, or standard printed groupings; Luhn-validated. |
 | `API_KEY`     | regex                              | Known prefixes (`sk-`, `AKIA`, `ghp_`) or a long high-entropy alnum run. |
-| `PERSON`, `LOCATION` | spaCy NER (optional `[ner]` extra) | Requires `pip install spanguard[ner]` and a downloaded spaCy model. |
+| `PERSON`, `LOCATION` | spaCy NER (optional `[ner]` extra) | Requires the `[ner]` extra, a spaCy model, and passing `SpacyRecognizer()` (see [Install](#install)). |
 
 Four redaction modes are available on every `Policy`: `mask`, `placeholder`,
 `hash`, and `tokenize` (reversible via `Redactor.reveal()`). See
@@ -174,14 +193,14 @@ CLI, is at [clufy.github.io/spanguard](https://clufy.github.io/spanguard).
 ## Contributing
 
 Bug reports and pull requests are welcome — see
-[CONTRIBUTING.md](CONTRIBUTING.md) for how to set up a dev environment and
+[CONTRIBUTING.md](https://github.com/Clufy/spanguard/blob/master/CONTRIBUTING.md) for how to set up a dev environment and
 run the test suite.
 
 ## Security
 
-To report a vulnerability, please see [SECURITY.md](SECURITY.md) rather than
+To report a vulnerability, please see [SECURITY.md](https://github.com/Clufy/spanguard/blob/master/SECURITY.md) rather than
 opening a public issue.
 
 ## License
 
-MIT — see [LICENSE](LICENSE).
+MIT — see [LICENSE](https://github.com/Clufy/spanguard/blob/master/LICENSE).

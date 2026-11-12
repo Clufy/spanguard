@@ -63,7 +63,7 @@ coverage below the gate.
   targeting Python 3.12. Run `uv run ruff check . --fix` for anything
   auto-fixable, then review the diff.
 - **Tests are required, not optional, for behavior changes.** The suite
-  currently sits at 97 tests and 96.92% statement+branch coverage; the CI
+  currently sits at 128 tests and 97.92% statement+branch coverage; the CI
   gate fails any run under 90%. A PR that drops coverage below the gate, or
   that adds a detector/feature with no tests, will not be merged.
 - **Never let raw matched values leak into non-text output.** This is the

@@ -7,8 +7,7 @@ before reporting.
 
 ## Supported versions
 
-spanguard is pre-1.0 and has not yet been published to PyPI (current version:
-`0.1.0`). Until a stable `1.x` line exists, only the latest `0.x` release
+spanguard is pre-1.0 (current version: `0.1.0`). Until a stable `1.x` line exists, only the latest `0.x` release
 receives security fixes.
 
 | Version | Supported          |

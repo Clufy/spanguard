@@ -7,59 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-### Performance
-
-Redaction output is byte-identical to 0.1.0; each change is pinned by a
-differential test against the previous algorithm.
-
-| Path | 0.1.0 | Now |
-|---|---|---|
-| `Redactor.redact`, 40k spans | 84.6 s | 0.84 s |
-| `EmailRecognizer`, 8k-char token with no spaces | 844 ms (quadratic) | 0.6 ms (linear) |
-| `Keyring.reveal`, 30k issued tokens | 11.2 s | 44 ms |
-| `StreamRedactor`, 200 KB in 4 KB chunks | 304 ms | 194 ms |
-| `StreamRedactor`, 1 MB with no whitespace | quadratic | linear |
-| `StreamRedactor`, 200 KB whose only whitespace is inside a phone number | 8.49 s | 0.08 s |
-| `benchmarks/throughput.py` (1 MB corpus) | 1.54 MB/s | 2.15 MB/s |
-
-- Overlap resolution is O(n log n) (bisect over chosen spans) instead of O(n²).
-- Email detection no longer backtracks quadratically on long whitespace-free
-  runs (for example base64 blobs), which made very large tokens a
-  denial-of-service vector.
-- `Keyring.reveal` scans bracket-delimited tokens once and looks them up,
-  instead of rebuilding an alternation of every issued token per call.
-- `StreamRedactor` reuses its verified prefix spans when emitting, skips
-  detection when no cut point exists, and retries cut points that already
-  failed only once new whitespace arrives past them, so a stream whose only whitespace sits inside an entity
-  (for example `(555) 123 4567-` followed by a blob) is linear, not
-  quadratic.
-
-### Added
-
-- CLI: `-` as the input path reads stdin (decoded as UTF-8).
-- `StreamRedactor(max_buffer=N)` and `StreamBufferFullError`: an opt-in cap
-  on held-back text for streams that never offer a safe split point. The
-  default stays uncapped.
-- `Redactor` warns (`UserWarning`, entity labels only) when `Policy.entities`
-  names a type with no built-in recognizer, such as `PERSON` without
-  `SpacyRecognizer` or a typo like `EMIAL`, instead of silently detecting
-  nothing for it.
-
-### Changed
-
-- CLI: an unknown `--entities` name now exits with code 2 and lists the valid
-  types, instead of being silently skipped and leaving that type unredacted.
-- CLI: undecodable, unreadable, or directory inputs exit with code 2 and a
-  one-line `error:` message that names only the path, instead of a traceback.
-  The same applies when stdin is closed or absent (`<&-`, `pythonw`).
-
-### Fixed
-
-- Docs: the claim that `StreamRedactor` memory is always bounded by `tail`
-  plus one chunk was wrong for streams without a safe separator. The
-  streaming page and known limitations now describe the real behavior.
-
-## [0.1.0] - 2026-07-06
+## [0.1.0] - 2026-11-12
 
 Initial release.
 
@@ -92,6 +40,17 @@ Initial release.
 - **`spanguard` CLI** with `scan` (report entity-type counts only, never raw
   values) and `redact` (write redacted text to stdout or a file, with an
   optional `--audit-json` audit record on stderr) subcommands.
+  `-` reads stdin as UTF-8. An unknown `--entities` name, an unreadable,
+  undecodable or missing input (including closed stdin), or an unwritable
+  `--out` path exits with code 2 and a one-line `error:` message that names
+  only the path or label, never input content.
+- **Unknown-entity warning**: `Redactor` warns (`UserWarning`, entity labels
+  only) when `Policy.entities` names a type with no recognizer, such as
+  `PERSON` without `SpacyRecognizer` or a typo like `EMIAL`, instead of
+  silently detecting nothing for it.
+- **`StreamRedactor(max_buffer=N)`** and `StreamBufferFullError`: an opt-in
+  cap on held-back text for streams that never offer a safe split point.
+  Uncapped by default.
 - **Leak-free audit records** — every `RedactionResult.audit` contains only
   entity-type counts, a policy hash, and a timestamp, never a raw matched
   value or span text; this guarantee is enforced directly by the test suite
@@ -102,10 +61,30 @@ Initial release.
   the CLI, recognizers, and an honest known-limitations page, published to
   [clufy.github.io/spanguard](https://clufy.github.io/spanguard).
 - CI pipeline (ruff, mypy `--strict`, pytest with a 90% coverage gate) on
-  every push and pull request; 97 tests at 96.92% coverage as of this
-  release. Publishing to PyPI is wired up via GitHub Actions OIDC Trusted
-  Publishing on `v*` tags (not yet used — spanguard is not yet published to
-  PyPI as of 0.1.0).
+  every push and pull request; 128 tests at 97.92% coverage as of this
+  release. Published to PyPI from GitHub Actions via OIDC Trusted
+  Publishing on `v*` tags; no PyPI token is stored anywhere.
+
+### Performance
+
+Measured against the July 2026 pre-release build. Redaction output is
+byte-identical; each change is pinned by a differential test against the
+earlier algorithm.
+
+| Path | Pre-release | 0.1.0 |
+|---|---|---|
+| `Redactor.redact`, 40k spans | 84.6 s | 0.84 s |
+| `EmailRecognizer`, 8k-char token with no spaces | 844 ms (quadratic) | 0.6 ms (linear) |
+| `Keyring.reveal`, 30k issued tokens | 11.2 s | 44 ms |
+| `StreamRedactor`, 200 KB in 4 KB chunks | 304 ms | 194 ms |
+| `StreamRedactor`, 1 MB with no whitespace | quadratic | linear |
+| `StreamRedactor`, 200 KB whose only whitespace is inside a phone number | 8.49 s | 0.08 s |
+| `benchmarks/throughput.py` (1 MB corpus) | 1.54 MB/s | 2.15 MB/s |
+
+Overlap resolution is O(n log n), email detection cannot backtrack
+quadratically on long whitespace-free runs (a denial-of-service vector),
+`Keyring.reveal` is linear in the text, and `StreamRedactor` never re-detects
+text it has already verified or split points it has already tried.
 
 [unreleased]: https://github.com/Clufy/spanguard/compare/v0.1.0...HEAD
 [0.1.0]: https://github.com/Clufy/spanguard/releases/tag/v0.1.0
