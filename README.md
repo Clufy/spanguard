@@ -1,4 +1,4 @@
-# spanguard
+# spanguard: PII/PHI detection and redaction for Python
 
 **Redact PII/PHI from text and streams — with an audit trail that can never leak the data it's auditing.**
 
@@ -10,8 +10,8 @@
 [![Typed](https://img.shields.io/badge/mypy-strict-blue.svg)](https://mypy-lang.org/)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](https://github.com/Clufy/spanguard/blob/master/LICENSE)
 
-spanguard detects and redacts PII/PHI (personally identifiable information and
-protected health information) in text and streaming transcripts. Every
+spanguard is an open-source Python library that detects and redacts PII/PHI (personally identifiable information and
+protected health information) in text and streaming transcripts, such as call-center or LLM chat logs. Every
 `Redactor.redact()` call returns a `RedactionResult` whose `audit` field holds
 only entity-type counts, a policy hash, and a timestamp — **never the raw
 matched values** — so the audit trail itself can never become a second place
@@ -30,6 +30,7 @@ not just documented.
 - [Docs](#docs)
 - [Contributing](#contributing)
 - [Security](#security)
+- [Related projects](#related-projects)
 - [License](#license)
 
 ## Why spanguard
@@ -200,6 +201,14 @@ run the test suite.
 
 To report a vulnerability, please see [SECURITY.md](https://github.com/Clufy/spanguard/blob/master/SECURITY.md) rather than
 opening a public issue.
+
+## Related projects
+
+By [Aquib Haq](https://github.com/Clufy) · [clufy.github.io](https://clufy.github.io/)
+
+- [voxbridge](https://github.com/Clufy/voxbridge): one Python SDK for Vapi and Retell voice agents.
+- [Sentinel](https://github.com/Clufy/Sentinel): AI compliance assistant for NIST 800-53, ISO 27001 and CIS Controls.
+- [claude-code-gateway](https://github.com/Clufy/claude-code-gateway): run Claude Code on any LLM through a Cloudflare Worker.
 
 ## License
 
