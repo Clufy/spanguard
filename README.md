@@ -1,3 +1,5 @@
+![spanguard redacting PII in a live call transcript](.github/assets/banner.gif)
+
 # spanguard: PII/PHI detection and redaction for Python
 
 **Redact PII/PHI from text and streams — with an audit trail that can never leak the data it's auditing.**
