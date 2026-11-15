@@ -1,4 +1,4 @@
-![spanguard redacting PII in a live call transcript](.github/assets/banner.gif)
+![spanguard redacting PII in a live call transcript](https://raw.githubusercontent.com/Clufy/spanguard/master/.github/assets/banner.gif)
 
 # spanguard: PII/PHI detection and redaction for Python
 
